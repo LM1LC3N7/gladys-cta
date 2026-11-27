@@ -621,6 +621,7 @@ export class CtaApp {
   /** Saves /data without ever waiting more than SAVE_BOUND for it. */
   async persist() {
     if (!this.loaded || this.storeStatus === 'unreadable') return false;
+    this.lastSaveFailed = false;
     let timer;
     const bound = new Promise((resolve) => {
       timer = this.timers.setTimeout(() => resolve('late'), SAVE_BOUND);
@@ -634,6 +635,7 @@ export class CtaApp {
       return outcome === 'saved';
     } catch (err) {
       this.logger.warn(`Saving /data failed (${err?.code ?? err?.name ?? 'Error'})`);
+      this.lastSaveFailed = true;
       return false;
     } finally {
       this.timers.clearTimeout(timer);
@@ -802,7 +804,8 @@ export class CtaApp {
     if (q.count >= this.config.dailyBudget) return { ok: false, kind: 'budget' };
     q.count += 1;
     // Not written (the status says so): a restart may count the day from less.
-    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;
+    // A slow save (more than 2 s) is only late: not a failure.
+    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;
     if (gen !== this.gen) return null;
     this.lastServiceMono[service] = this.monotonic();
     return this.call(url, gen, service);
@@ -1474,16 +1477,25 @@ export class CtaApp {
 /**
  * The alerts that concern a watch. The CTA answers a station with the alerts
  * of its lines too, among them the elevators of every other station of those
- * lines (seen live on 2026-11-27): an alert naming stations (`T` services)
- * is kept only when one of them is the watched station; for bus routes, only
- * when it also names one of the routes. Alerts without a station are kept.
+ * lines (seen live on 2026-11-27). Only that accessibility noise is left out:
+ * an alert naming other stations (`T` services) but not the watched one (for
+ * a bus, none of its routes), whose impact is "Elevator Status" or whose
+ * severity is in the "accessibility and informational" band (1-19), and that
+ * is not major. A closure or a major alert on a watched line stays.
  */
 export function concerning(alerts, target) {
+  const routes = (target.routes ?? []).map((r) => r.toUpperCase());
   return alerts.filter((alert) => {
     const stations = alert.services.filter((s) => s.type === 'T').map((s) => s.id);
     if (stations.length === 0) return true;
-    if (target.station) return stations.includes(target.station);
-    return alert.services.some((s) => s.type === 'B' && target.routes.includes(s.id));
+    const ours = target.station
+      ? stations.includes(target.station)
+      : alert.services.some((s) => s.type === 'B' && routes.includes(s.id.toUpperCase()));
+    if (ours || alert.major) return true;
+    const accessibility =
+      /elevator/i.test(alert.impact) ||
+      (alert.severity !== null && alert.severity >= 1 && alert.severity <= 19);
+    return !accessibility;
   });
 }
 

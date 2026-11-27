@@ -64,9 +64,11 @@ ne veut pas que l'annulation soit montrée : le bus est simplement écarté).
 
 Les alertes d'un arrêt de bus sont celles des lignes vues à l'arrêt par Bus
 Tracker (l'API Customer Alerts ne connaît pas les arrêts de bus). Celles d'une
-station sont celles de la station et de ses lignes : pour une station, la CTA
-envoie aussi les alertes des autres stations de ses lignes (ascenseurs en
-panne ailleurs), qui sont écartées. Sans clé, les alertes d'une station
+station sont celles de la station et de ses lignes. Pour une station, la CTA
+envoie aussi les alertes d'ascenseur et d'accessibilité de toutes les autres
+stations de ses lignes : elles sont écartées (impact « Elevator Status » ou
+gravité 1-19, nommant une autre station, non majeures). Une fermeture d'une
+autre station ou une alerte majeure sur une ligne suivie est gardée. Sans clé, les alertes d'une station
 (40000-49999) sont lues quand même ; celles d'un quai (30000-39999) et d'un
 arrêt de bus attendent une première lecture de leurs départs.
 

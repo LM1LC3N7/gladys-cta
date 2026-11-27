@@ -23,5 +23,6 @@ the notes of the version's GitHub Release.
   key never sent again until it changes or the button's retry succeeds.
 - Canceled, invalidated and drop-off only bus trips (dynamic types 1, 4, 12, 16,
   17, 18) are never departures.
-- The alerts of a station leave out the elevators of the other stations of its
-  lines; a station reads its alerts without waiting for Train Tracker.
+- The alerts of a station leave out the elevator and accessibility alerts of
+  the other stations of its lines (never a closure nor a major alert); a
+  station reads its alerts without waiting for Train Tracker.

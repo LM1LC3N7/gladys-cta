@@ -334,7 +334,15 @@ test('the alerts of a station: its own and its lines, never the elevators of oth
   assert.deepEqual(kept.sort(), ['112148', '118659']);
   const now = CAPTURED_AT;
   const bus = (services) =>
-    readAlerts(alertsDoc(now, [alert(1, now, { ImpactedService: { Service: services } })])).alerts;
+    readAlerts(
+      alertsDoc(now, [
+        alert(1, now, {
+          Impact: 'Elevator Status',
+          SeverityScore: '5',
+          ImpactedService: { Service: services },
+        }),
+      ]),
+    ).alerts;
   assert.equal(
     concerning(bus([{ ServiceType: 'B', ServiceId: '20' }]), { routes: ['20'] }).length,
     1,
@@ -440,4 +448,110 @@ test('an alerts answer whose own time stamp is far from its Date: nothing publis
   await s.begin();
   assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)), []);
   assert.match(statusEn(s.fake), /alerts: The CTA real-time data is not updated/);
+});
+
+test('only the elevators and accessibility of other stations are left out, never a closure nor a major alert', async () => {
+  const { concerning } = await import('../src/app.js');
+  const { readAlerts } = await import('../src/cta.js');
+  const now = CAPTURED_AT;
+  const other = [
+    { ServiceType: 'T', ServiceId: '41070', ServiceName: 'Kedzie' },
+    { ServiceType: 'R', ServiceId: 'G', ServiceName: 'Green Line' },
+  ];
+  const here = [
+    { ServiceType: 'T', ServiceId: '40380' },
+    { ServiceType: 'R', ServiceId: 'G' },
+  ];
+  const list = readAlerts(
+    alertsDoc(now, [
+      alert(1, now, {
+        Impact: 'Station Closure',
+        SeverityScore: '40',
+        ImpactedService: { Service: other },
+      }),
+      alert(2, now, {
+        Impact: 'Elevator Status',
+        SeverityScore: '5',
+        MajorAlert: '1',
+        ImpactedService: { Service: other },
+      }),
+      alert(3, now, {
+        Impact: 'Elevator Status',
+        SeverityScore: '5',
+        ImpactedService: { Service: other },
+      }),
+      alert(4, now, {
+        Impact: 'Elevator Status',
+        SeverityScore: '5',
+        ImpactedService: { Service: here },
+      }),
+      alert(5, now, {
+        Impact: 'Special Note',
+        SeverityScore: '12',
+        ImpactedService: { Service: other },
+      }),
+    ]),
+  ).alerts;
+  assert.deepEqual(
+    concerning(list, { station: '40380' }).map((a) => a.id),
+    ['1', '2', '4'],
+  );
+  // Bus routes compared without case.
+  const bus = readAlerts(
+    alertsDoc(now, [
+      alert(6, now, {
+        Impact: 'Elevator Status',
+        SeverityScore: '5',
+        ImpactedService: {
+          Service: [
+            { ServiceType: 'T', ServiceId: '41260' },
+            { ServiceType: 'B', ServiceId: 'x9' },
+          ],
+        },
+      }),
+    ]),
+  ).alerts;
+  assert.equal(concerning(bus, { routes: ['X9'] }).length, 1);
+});
+
+test('a closure of another station of the line is counted and announced', async (t) => {
+  const extra = [];
+  const s = await setup({
+    api: createApi((call, api) => {
+      const now = api.clock.now();
+      if (call.kind === 'alerts' && call.params.get('stationid')) return alertsDoc(now, extra);
+      return defaultWorld(call, api);
+    }),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  extra.push(
+    alert(900, s.clock.now(), {
+      Impact: 'Station Closure',
+      SeverityScore: '45',
+      MajorAlert: '1',
+      ImpactedService: {
+        Service: [
+          { ServiceType: 'T', ServiceId: '41070' },
+          { ServiceType: 'R', ServiceId: 'G' },
+        ],
+      },
+    }),
+    alert(901, s.clock.now(), {
+      Impact: 'Elevator Status',
+      SeverityScore: '5',
+      ImpactedService: {
+        Service: [
+          { ServiceType: 'T', ServiceId: '41260' },
+          { ServiceType: 'R', ServiceId: 'G' },
+        ],
+      },
+    }),
+  );
+  await s.wait(5 * MINUTE);
+  assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)).at(-1), 1);
+  assert.deepEqual(
+    alertEvents(s.fake).map((e) => e.data.alert_id),
+    ['900'],
+  );
 });

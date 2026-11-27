@@ -38,9 +38,11 @@
   credit line the CTA terms suggest. No CTA logo on the cover (route colors only, allowed).
 - **Bus dynamic types** left out: 1, 4, 12 (cancellation not to be shown: the bus is left out, the safe side), 16, 17
   (invalidated trips, "should not be shown to the public"), 18 (canceled new trip). Review r1 B1.
-- **Alerts of a station** filtered: an alert naming stations (`T` services) is kept only when one is the watched
-  station (the CTA sends the elevators of every station of the lines, seen live); a bus alert naming stations only
-  when it also names a watched route. A station id 40000-49999 reads its alerts without Train Tracker. Codes 25 and 50
+- **Alerts of a station** filtered (review r2): an alert naming other stations (`T` services) but not the watched one
+  (for a bus, none of its routes, compared in upper case) is left out only when it is accessibility noise (impact
+  "Elevator Status" or severity 1-19, the guide's "accessibility and informational" band) and not major; a closure
+  or a major alert on a watched line stays (live 2026-11-27: 8 of the 9 alerts with a `T` were elevators). A slow
+  /data save (over 2 s) is late, not failed: only a real failure sets the status line. A station id 40000-49999 reads its alerts without Train Tracker. Codes 25 and 50
   are empty lists. Review r1 B2, m3, m4.
 - **"No API access permitted"** (API disabled by the CTA) pauses Bus Tracker (1 min doubled, 6 h at most), never a
   refused key; "No API access key supplied" stays a refusal (the key is always sent). Review r1 m2.
@@ -82,7 +84,7 @@
   equivalent: "the button reads without a refusal" (the loop over the refused keys is then empty), and (review r1)
   "an alert without start announced" (a null start reads as 1970 and fails the 24 h test anyway; the test of an
   unknown start stays). Review r1: 16 more mutants (the reviewer's 9 survivors and the new code), 74 in all, all
-  killed. Five survivors
+  killed. Review r2: 3 more on the alert filter (major exception, accessibility only, bus case), 77, all killed. Five survivors
   of the first run got a test: the budget not spent during a pause, a pause kept in /data across a restart, the next
   round armed after a failed one, an unknown bus stop asked again after 30 min, the merge of a refusal.
 - **/data unreadable**: never overwritten; read again every 10 s on its own timer; once readable, merged on the

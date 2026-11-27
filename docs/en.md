@@ -59,9 +59,11 @@ is simply left out).
 
 The bus alerts are those of the routes seen at the stop by Bus Tracker (the
 Customer Alerts API does not know bus stops). The train alerts are those of
-the station and of its lines: the CTA also sends, for a station, the alerts
-of the other stations of its lines (elevators out of service elsewhere),
-which are left out. Without a key, the alerts of a station (40000-49999) are
+the station and of its lines. The CTA also sends, for a station, the
+elevator and accessibility alerts of every other station of its lines: those
+are left out (impact "Elevator Status" or severity 1-19, naming another
+station, not major). A closure of another station or a major alert on a
+watched line is kept. Without a key, the alerts of a station (40000-49999) are
 read all the same; those of a platform stop (30000-39999) and of a bus stop
 wait for a first read of their departures.
 

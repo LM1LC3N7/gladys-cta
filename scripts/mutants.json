@@ -8,13 +8,13 @@
   {
     "name": "count saved after the request",
     "file": "src/app.js",
-    "from": "    q.count += 1;\n    // Not written (the status says so): a restart may count the day from less.\n    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n",
-    "to": "    // Not written (the status says so): a restart may count the day from less.\n    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n    q.count += 1;\n"
+    "from": "    q.count += 1;\n    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n",
+    "to": "    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n    q.count += 1;\n"
   },
   {
     "name": "count not saved before the request",
     "file": "src/app.js",
-    "from": "    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n",
+    "from": "    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n",
     "to": ""
   },
   {
@@ -416,14 +416,14 @@
   {
     "name": "elevators of other stations kept",
     "file": "src/app.js",
-    "from": "    if (target.station) return stations.includes(target.station);",
-    "to": "    if (target.station) return true;"
+    "from": "    if (ours || alert.major) return true;",
+    "to": "    if (true) return true;"
   },
   {
     "name": "bus alert naming stations kept",
     "file": "src/app.js",
-    "from": "    return alert.services.some((s) => s.type === 'B' && target.routes.includes(s.id));",
-    "to": "    return true;"
+    "from": "      : alert.services.some((s) => s.type === 'B' && routes.includes(s.id.toUpperCase()));",
+    "to": "      : true;"
   },
   {
     "name": "station alerts wait for Train Tracker",
@@ -442,5 +442,23 @@
     "file": "src/app.js",
     "from": "    if (fresh.length > 0) await this.persist();\n",
     "to": ""
+  },
+  {
+    "name": "filter without the major exception",
+    "file": "src/app.js",
+    "from": "    if (ours || alert.major) return true;",
+    "to": "    if (ours) return true;"
+  },
+  {
+    "name": "every alert naming another station left out",
+    "file": "src/app.js",
+    "from": "    return !accessibility;",
+    "to": "    return false;"
+  },
+  {
+    "name": "bus routes compared with case",
+    "file": "src/app.js",
+    "from": "routes.includes(s.id.toUpperCase())",
+    "to": "routes.includes(s.id)"
   }
 ]
