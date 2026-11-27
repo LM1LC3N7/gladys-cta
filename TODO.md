@@ -41,9 +41,12 @@
 - **Alerts of a station** filtered (review r2): an alert naming other stations (`T` services) but not the watched one
   (for a bus, none of its routes, compared in upper case) is left out only when it is accessibility noise (impact
   "Elevator Status" or severity 1-19, the guide's "accessibility and informational" band) and not major; a closure
-  or a major alert on a watched line stays (live 2026-11-27: 8 of the 9 alerts with a `T` were elevators). A slow
-  /data save (over 2 s) is late, not failed: only a real failure sets the status line. A station id 40000-49999 reads its alerts without Train Tracker. Codes 25 and 50
-  are empty lists. Review r1 B2, m3, m4.
+  or a major alert on a watched line stays (live 2026-11-27: 8 of the 9 alerts with a `T` were elevators). A station
+  id 40000-49999 reads its alerts without Train Tracker. Codes 25 and 50 are empty lists. Review r1 B2, m3, m4.
+- **A slow /data save** (over 2 s) is late, not failed, at the start (the first read then waits 30 s, the safe side),
+  in a round and before a keyed request: only a real failure sets the status line, a late save that fails afterwards
+  included (said once it fails); a round whose saves go through clears it. /data unreadable (left untouched) is no
+  failure either. Reviews r2 m3, r3 m1, m2.
 - **"No API access permitted"** (API disabled by the CTA) pauses Bus Tracker (1 min doubled, 6 h at most), never a
   refused key; "No API access key supplied" stays a refusal (the key is always sent). Review r1 m2.
 - **Scene events**: the alert ids are written to /data before the events leave (no repeat after a kill). The count
@@ -84,7 +87,10 @@
   equivalent: "the button reads without a refusal" (the loop over the refused keys is then empty), and (review r1)
   "an alert without start announced" (a null start reads as 1970 and fails the 24 h test anyway; the test of an
   unknown start stays). Review r1: 16 more mutants (the reviewer's 9 survivors and the new code), 74 in all, all
-  killed. Review r2: 3 more on the alert filter (major exception, accessibility only, bus case), 77, all killed. Five survivors
+  killed. Review r2: 3 more on the alert filter (major exception, accessibility only, bus case), 77, all killed.
+  Review r3: 14 more (the reviewer's 4 survivors: severity band 0, 19, 20, 39 and the elevator impact alone, a slow
+  save in a keyed request; the bounds 1 and 19; a slow or failed save at the start, the end of a round, in checkData,
+  a late failure, an older failure read back), 91, all killed. Five survivors
   of the first run got a test: the budget not spent during a pause, a pause kept in /data across a restart, the next
   round armed after a failed one, an unknown bus stop asked again after 30 min, the merge of a refusal.
 - **/data unreadable**: never overwritten; read again every 10 s on its own timer; once readable, merged on the

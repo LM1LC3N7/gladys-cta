@@ -8,14 +8,14 @@
   {
     "name": "count saved after the request",
     "file": "src/app.js",
-    "from": "    q.count += 1;\n    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n",
-    "to": "    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n    q.count += 1;\n"
+    "from": "    q.count += 1;\n    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n",
+    "to": "    // Not written (the status says so): a restart may count the day from less.\n    // A slow save (more than 2 s) is only late: not a failure.\n    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    q.count += 1;\n"
   },
   {
     "name": "count not saved before the request",
     "file": "src/app.js",
-    "from": "    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;\n",
-    "to": ""
+    "from": "    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    if (gen !== this.gen) return null;\n",
+    "to": "    if (gen !== this.gen) return null;\n"
   },
   {
     "name": "new Chicago day never starts",
@@ -460,5 +460,89 @@
     "file": "src/app.js",
     "from": "routes.includes(s.id.toUpperCase())",
     "to": "routes.includes(s.id)"
+  },
+  {
+    "name": "accessibility band up to severity 39",
+    "file": "src/app.js",
+    "from": "alert.severity <= 19",
+    "to": "alert.severity <= 39"
+  },
+  {
+    "name": "severity 0 in the accessibility band",
+    "file": "src/app.js",
+    "from": "alert.severity >= 1",
+    "to": "alert.severity >= 0"
+  },
+  {
+    "name": "elevator impact ignored",
+    "file": "src/app.js",
+    "from": "/elevator/i.test(alert.impact) ||",
+    "to": "false ||"
+  },
+  {
+    "name": "slow save a failure in keyedCall",
+    "file": "src/app.js",
+    "from": "    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    if (gen !== this.gen) return null;",
+    "to": "    if (!(await this.persist())) this.saveFailed = true;\n    if (gen !== this.gen) return null;"
+  },
+  {
+    "name": "severity 1 out of the accessibility band",
+    "file": "src/app.js",
+    "from": "alert.severity >= 1",
+    "to": "alert.severity > 1"
+  },
+  {
+    "name": "severity 19 out of the accessibility band",
+    "file": "src/app.js",
+    "from": "alert.severity <= 19",
+    "to": "alert.severity < 19"
+  },
+  {
+    "name": "keyed save failure not said",
+    "file": "src/app.js",
+    "from": "    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    if (gen !== this.gen) return null;",
+    "to": "    await this.persist();\n    if (gen !== this.gen) return null;"
+  },
+  {
+    "name": "slow save a failure at the start of a round",
+    "file": "src/app.js",
+    "from": "    await this.persist();\n    this.saveFailed = this.lastSaveFailed;",
+    "to": "    this.saveFailed = !(await this.persist());"
+  },
+  {
+    "name": "slow save a failure at the end of a round",
+    "file": "src/app.js",
+    "from": "    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    if (gen !== this.gen) return;\n    if (this.publishedNames",
+    "to": "    if (!(await this.persist())) this.saveFailed = true;\n    if (gen !== this.gen) return;\n    if (this.publishedNames"
+  },
+  {
+    "name": "save failure at the end of a round not said",
+    "file": "src/app.js",
+    "from": "    await this.persist();\n    if (this.lastSaveFailed) this.saveFailed = true;\n    if (gen !== this.gen) return;\n    if (this.publishedNames",
+    "to": "    await this.persist();\n    if (gen !== this.gen) return;\n    if (this.publishedNames"
+  },
+  {
+    "name": "a failure never cleared by a good round",
+    "file": "src/app.js",
+    "from": "    this.saveFailed = this.lastSaveFailed;",
+    "to": "    if (this.lastSaveFailed) this.saveFailed = true;"
+  },
+  {
+    "name": "slow save a failure in checkData",
+    "file": "src/app.js",
+    "from": "      this.dataTells = await this.persist();\n      if (this.lastSaveFailed) this.saveFailed = true;",
+    "to": "      this.dataTells = await this.persist();\n      if (!this.dataTells) this.saveFailed = true;"
+  },
+  {
+    "name": "late save failure not said",
+    "file": "src/app.js",
+    "from": "        failed(err);\n        this.saveFailed = true;\n",
+    "to": "        failed(err);\n"
+  },
+  {
+    "name": "older failure read back when nothing is saved",
+    "file": "src/app.js",
+    "from": "    this.lastSaveFailed = false;\n    if (!this.loaded || this.storeStatus === 'unreadable') return false;\n",
+    "to": "    if (!this.loaded || this.storeStatus === 'unreadable') return false;\n    this.lastSaveFailed = false;\n"
   }
 ]

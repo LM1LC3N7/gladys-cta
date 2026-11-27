@@ -514,6 +514,43 @@ test('only the elevators and accessibility of other stations are left out, never
   assert.equal(concerning(bus, { routes: ['X9'] }).length, 1);
 });
 
+test('the accessibility band of other stations: severity 1 to 19 or an elevator, nothing more', async () => {
+  const { concerning } = await import('../src/app.js');
+  const { readAlerts } = await import('../src/cta.js');
+  const now = CAPTURED_AT;
+  const other = {
+    Service: [
+      { ServiceType: 'T', ServiceId: '41070' },
+      { ServiceType: 'R', ServiceId: 'G' },
+    ],
+  };
+  // Not major, another station, "Minor Delays" (not an elevator): the
+  // severity alone decides, its band 1-19 left out.
+  const scores = ['0', '1', '12', '19', '20', '39', '40', 'abc'];
+  const delays = scores.map((score, i) =>
+    alert(30 + i, now, { SeverityScore: score, ImpactedService: other }),
+  );
+  // An elevator is left out by its impact alone, whatever its severity.
+  const elevators = ['30', '99', 'abc'].map((score, i) =>
+    alert(50 + i, now, { Impact: 'Elevator Status', SeverityScore: score, ImpactedService: other }),
+  );
+  const list = readAlerts(alertsDoc(now, [...delays, ...elevators])).alerts;
+  assert.deepEqual(
+    list.map((a) => a.severity),
+    [0, 1, 12, 19, 20, 39, 40, null, 30, 99, null],
+  );
+  assert.deepEqual(
+    concerning(list, { station: '40380' }).map((a) => [a.id, a.severity]),
+    [
+      ['30', 0],
+      ['34', 20],
+      ['35', 39],
+      ['36', 40],
+      ['37', null],
+    ],
+  );
+});
+
 test('a closure of another station of the line is counted and announced', async (t) => {
   const extra = [];
   const s = await setup({

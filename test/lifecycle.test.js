@@ -152,6 +152,111 @@ test('/data that cannot be written: the status says so, the reads go on', async 
   assert.match(statusEn(s.fake), /could not be written in \/data/);
 });
 
+test('/data slow (saves held over a minute): late, not failed; never said as not written, the reads go on', async (t) => {
+  const store = createMemoryStore();
+  let release;
+  store.hold = new Promise((resolve) => (release = resolve));
+  const s = await setup({ store });
+  t.after(() => {
+    store.hold = null;
+    release();
+    return s.app.stop();
+  });
+  // Not awaited: the check of /data waits 2 s for its save.
+  s.app.start(HOME);
+  await s.wait(0);
+  await s.wait(5 * SECOND);
+  // Late at the start: /data does not tell (the safe side), but nothing failed.
+  assert.match(statusEn(s.fake), /does not tell when the CTA was last read/);
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  // Rounds at 30 s (the start could not tell) and 90 s.
+  await s.wait(100 * SECOND);
+  // Every save of the rounds (start, keyed requests, end) was late.
+  assert.equal(s.api.count('train'), 2);
+  assert.equal(s.api.count('bus'), 2);
+  assert.ok(s.lines.some((l) => /Saving \/data is slow/.test(l)));
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  // The saves come through at last: nothing to say either.
+  release();
+  store.hold = null;
+  await s.wait(60 * SECOND);
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  assert.equal(store.data.quota.train.count, s.api.count('train'));
+});
+
+test('a slow save that fails afterwards is a failure, said once it fails; a good save clears it', async (t) => {
+  const s = await setup();
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  const save = s.store.save.bind(s.store);
+  let failing = true;
+  s.store.save = async (next) => {
+    if (!failing) return save(next);
+    await new Promise((resolve) => s.clock.timers.setTimeout(resolve, 5 * SECOND));
+    throw Object.assign(new Error('I/O error'), { code: 'EIO' });
+  };
+  await s.wait(1 * MINUTE);
+  assert.ok(s.lines.some((l) => /Saving \/data is slow/.test(l)));
+  assert.ok(s.lines.some((l) => /Saving \/data failed \(EIO\)/.test(l)));
+  assert.match(statusEn(s.fake), /could not be written in \/data/);
+  failing = false;
+  await s.wait(1 * MINUTE);
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+});
+
+test('the saves of a round: a failure is said wherever it happens, a late keyed save is not', async (t) => {
+  // One save misbehaves, once: the one after the train request (the count of
+  // the bus request), or the one after the bus request (the end of the round).
+  let mode = null;
+  let once = null;
+  const held = [];
+  const store = createMemoryStore();
+  const save = store.save.bind(store);
+  store.save = async (data) => {
+    const how = once;
+    once = null;
+    if (how === 'fail') throw Object.assign(new Error('No space left'), { code: 'ENOSPC' });
+    if (how === 'late') await new Promise((resolve) => held.push(resolve));
+    return save(data);
+  };
+  const api = createApi((call, api) => {
+    if (call.kind === 'train' && mode === 'keyed-late') once = 'late';
+    if (call.kind === 'train' && mode === 'keyed-fail') once = 'fail';
+    if (call.kind === 'bus' && mode === 'end-fail') once = 'fail';
+    return defaultWorld(call, api);
+  });
+  const s = await setup({ store, api });
+  t.after(() => {
+    for (const resolve of held) resolve();
+    return s.app.stop();
+  });
+  await s.begin();
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  // The save of the bus request held over a minute: late, not failed.
+  mode = 'keyed-late';
+  await s.wait(1 * MINUTE);
+  assert.equal(s.api.count('bus'), 2);
+  assert.equal(held.length, 1);
+  assert.ok(s.lines.some((l) => /Saving \/data is slow/.test(l)));
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  // The save of the bus request fails: said.
+  mode = 'keyed-fail';
+  await s.wait(1 * MINUTE);
+  assert.equal(s.api.count('bus'), 3);
+  assert.match(statusEn(s.fake), /could not be written in \/data/);
+  // Only the save at the end of the round fails: said too.
+  mode = 'end-fail';
+  await s.wait(1 * MINUTE);
+  assert.equal(s.api.count('bus'), 4);
+  assert.match(statusEn(s.fake), /could not be written in \/data/);
+  // A round whose saves all go through clears it.
+  mode = null;
+  await s.wait(1 * MINUTE);
+  assert.equal(s.api.count('bus'), 5);
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+});
+
 test('the configuration errors are in the status; no valid watch: no read at all', async (t) => {
   const s = await setup({ config: { train1_station: 'abc', train_key: 'x y' } });
   t.after(() => s.app.stop());

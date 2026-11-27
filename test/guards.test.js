@@ -269,6 +269,13 @@ test('an unreadable /data is never overwritten', async (t) => {
   await s.wait(2 * MINUTE);
   assert.equal(store.saves, 0);
   assert.match(statusEn(s.fake), /unreadable: left untouched/);
+  // Left untouched is not a failed save.
+  assert.doesNotMatch(statusEn(s.fake), /could not be written/);
+  // An older failure is never read back as the outcome of a save not attempted.
+  s.app.lastSaveFailed = true;
+  assert.equal(await s.app.persist(), false);
+  assert.equal(s.app.lastSaveFailed, false);
+  assert.equal(store.saves, 0);
 });
 
 test('the keys never reach the logs, /data, the status nor Gladys', async (t) => {

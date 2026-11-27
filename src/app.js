@@ -163,7 +163,10 @@ export class CtaApp {
     this.lastAttemptMono = null;
     /** Whether /data tells the last attempt (null: not known yet). */
     this.dataTells = null;
+    /** A save to /data failed (the status says so); a slow one is only late. */
     this.saveFailed = false;
+    /** Whether the last `persist()` failed, not only came late. */
+    this.lastSaveFailed = false;
   }
 
   emptyState() {
@@ -395,9 +398,10 @@ export class CtaApp {
       this.dataTells = false;
     } else {
       // Readable is not enough: a /data that cannot be written would keep an
-      // old attempt time and let every restart read.
+      // old attempt time and let every restart read. A slow save does not
+      // tell either (the safe side), but only a failure is said as one.
       this.dataTells = await this.persist();
-      if (!this.dataTells) this.saveFailed = true;
+      if (this.lastSaveFailed) this.saveFailed = true;
     }
   }
 
@@ -618,23 +622,33 @@ export class CtaApp {
     }
   }
 
-  /** Saves /data without ever waiting more than SAVE_BOUND for it. */
+  /**
+   * Saves /data without ever waiting more than SAVE_BOUND for it: true once
+   * written. `lastSaveFailed` tells a failure from a save that is only late
+   * (or not attempted: /data unreadable, left untouched); a late save that
+   * fails afterwards is a failure, said when it does.
+   */
   async persist() {
-    if (!this.loaded || this.storeStatus === 'unreadable') return false;
     this.lastSaveFailed = false;
+    if (!this.loaded || this.storeStatus === 'unreadable') return false;
     let timer;
     const bound = new Promise((resolve) => {
       timer = this.timers.setTimeout(() => resolve('late'), SAVE_BOUND);
     });
-    try {
-      const outcome = await Promise.race([
-        Promise.resolve(this.store.save(this.persisted)).then(() => 'saved'),
-        bound,
-      ]);
-      if (outcome === 'late') this.logger.warn('Saving /data is slow: going on without waiting');
-      return outcome === 'saved';
-    } catch (err) {
+    const failed = (err) =>
       this.logger.warn(`Saving /data failed (${err?.code ?? err?.name ?? 'Error'})`);
+    try {
+      const saving = Promise.resolve(this.store.save(this.persisted));
+      const outcome = await Promise.race([saving.then(() => 'saved'), bound]);
+      if (outcome === 'saved') return true;
+      this.logger.warn('Saving /data is slow: going on without waiting');
+      saving.catch((err) => {
+        failed(err);
+        this.saveFailed = true;
+      });
+      return false;
+    } catch (err) {
+      failed(err);
       this.lastSaveFailed = true;
       return false;
     } finally {
@@ -743,8 +757,10 @@ export class CtaApp {
     // The next round is armed first: neither a slow /data nor a Gladys that
     // does not answer a publication holds it back.
     this.scheduleCycle(this.interval, gen);
-    const saved = await this.persist();
-    this.saveFailed = !saved && this.storeStatus !== 'unreadable';
+    // Only a failure is said: neither a slow save (late, not lost) nor an
+    // unreadable /data (left untouched, said on its own).
+    await this.persist();
+    this.saveFailed = this.lastSaveFailed;
     if (gen !== this.gen) return;
     await this.readTrains(gen);
     if (gen !== this.gen) return;
@@ -752,8 +768,8 @@ export class CtaApp {
     if (gen !== this.gen) return;
     await this.readAllAlerts(gen, start);
     if (gen !== this.gen) return;
-    const savedAfter = await this.persist();
-    if (this.storeStatus !== 'unreadable') this.saveFailed = this.saveFailed || !savedAfter;
+    await this.persist();
+    if (this.lastSaveFailed) this.saveFailed = true;
     if (gen !== this.gen) return;
     if (this.publishedNames !== JSON.stringify([...this.names()])) {
       await this.publishDevices();
@@ -805,7 +821,8 @@ export class CtaApp {
     q.count += 1;
     // Not written (the status says so): a restart may count the day from less.
     // A slow save (more than 2 s) is only late: not a failure.
-    if (!(await this.persist()) && this.lastSaveFailed) this.saveFailed = true;
+    await this.persist();
+    if (this.lastSaveFailed) this.saveFailed = true;
     if (gen !== this.gen) return null;
     this.lastServiceMono[service] = this.monotonic();
     return this.call(url, gen, service);
