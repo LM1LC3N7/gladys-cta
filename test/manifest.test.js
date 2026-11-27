@@ -56,7 +56,10 @@ test('the store basics; one version in the four places, never pinned', () => {
   assert.equal(manifest.type, 'device');
   assert.match(manifest.version, SEMVER);
   assert.equal(manifest.version, '0.1.0');
-  assert.equal(manifest.docker_image, `ghcr.io/lm1lc3n7/gladys-chicago-transit:${manifest.version}`);
+  assert.equal(
+    manifest.docker_image,
+    `ghcr.io/lm1lc3n7/gladys-chicago-transit:${manifest.version}`,
+  );
   assert.equal(manifest.version, pkg.version);
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[''].version, pkg.version);
