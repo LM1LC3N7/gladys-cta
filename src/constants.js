@@ -124,8 +124,13 @@ export const TRAIN_ROUTES = Object.freeze({
   Y: { name: 'Yellow Line', aliases: ['y', 'yellow'] },
 });
 
-/** Bus predictions that never take anyone: canceled (1, 12), drop-off only (4). */
-export const BUS_SKIP_DYN = Object.freeze([1, 4, 12]);
+/**
+ * Bus predictions that are not departures (Bus Tracker guide v3, dynamic
+ * action types): canceled (1), drop-off only (4), canceled without showing
+ * the cancellation (12: kept out, the safe side), invalidated trips (16, 17:
+ * "predictions should not be shown to the public"), canceled new trip (18).
+ */
+export const BUS_SKIP_DYN = Object.freeze([1, 4, 12, 16, 17, 18]);
 
 /** Counters are bounded. */
 export const COUNT_MAX = MAX_ITEMS;

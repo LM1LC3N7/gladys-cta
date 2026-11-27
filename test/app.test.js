@@ -59,8 +59,10 @@ test('first round: trains, buses, then the alerts; texts and counters published'
   assert.deepEqual(published(s.fake, B(FEATURES.NEXT)), ['20 → Austin in 6 min (05:20)']);
   assert.deepEqual(published(s.fake, B(FEATURES.SECOND)), ['No following departure (read 05:14)']);
   // Alerts of Clark/Lake from the live capture; the bus alerts by route 20.
-  assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)), [9]);
-  assert.match(published(s.fake, T(FEATURES.ALERT_TEXT))[0], /\(8 more alerts\)$/);
+  // Of the 9 alerts the CTA gives for Clark/Lake, 7 are elevators of other
+  // stations of its lines: only the station's own and the lines' alerts stay.
+  assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)), [2]);
+  assert.match(published(s.fake, T(FEATURES.ALERT_TEXT))[0], /\(1 more alert\)$/);
   const busAlerts = s.api.calls.filter((c) => c.kind === 'alerts')[1];
   assert.equal(busAlerts.params.get('routeid'), '20');
   assert.deepEqual(published(s.fake, B(FEATURES.ALERTS)), [0]);
@@ -323,4 +325,119 @@ test('an alerts failure is spaced out and never holds the departures', async (t)
   assert.equal(published(s.fake, T(FEATURES.DEPARTURES)).length, 10);
   assert.ok(ALERTS_LIVE);
   assert.equal(CAPTURED_AT % 1000, 0);
+});
+
+test('the alerts of a station: its own and its lines, never the elevators of other stations', async () => {
+  const { concerning } = await import('../src/app.js');
+  const { readAlerts } = await import('../src/cta.js');
+  const kept = concerning(readAlerts(ALERTS_LIVE).alerts, { station: '40380' }).map((a) => a.id);
+  assert.deepEqual(kept.sort(), ['112148', '118659']);
+  const now = CAPTURED_AT;
+  const bus = (services) =>
+    readAlerts(alertsDoc(now, [alert(1, now, { ImpactedService: { Service: services } })])).alerts;
+  assert.equal(
+    concerning(bus([{ ServiceType: 'B', ServiceId: '20' }]), { routes: ['20'] }).length,
+    1,
+  );
+  assert.equal(
+    concerning(
+      bus([
+        { ServiceType: 'T', ServiceId: '41260' },
+        { ServiceType: 'R', ServiceId: 'G' },
+      ]),
+      { routes: ['20'] },
+    ).length,
+    0,
+  );
+  assert.equal(
+    concerning(
+      bus([
+        { ServiceType: 'T', ServiceId: '41260' },
+        { ServiceType: 'B', ServiceId: '20' },
+      ]),
+      { routes: ['20'] },
+    ).length,
+    1,
+  );
+});
+
+test('every dynamic action type that is not a departure is left out (dyn 1, 4, 12, 16, 17, 18)', async (t) => {
+  for (const dyn of [1, 4, 12, 16, 17, 18]) {
+    const s = await setup({
+      api: createApi((call, api) => {
+        const now = api.clock.now();
+        if (call.kind === 'bus') return busDoc([prd(now, 3, { dyn }), prd(now, 9, { dyn: 0 })]);
+        return defaultWorld(call, api);
+      }),
+    });
+    await s.begin();
+    await s.app.stop();
+    assert.deepEqual(
+      published(s.fake, B(FEATURES.NEXT)),
+      ['20 → Austin in 9 min (05:23)'],
+      `dyn ${dyn}`,
+    );
+    assert.deepEqual(published(s.fake, B(FEATURES.DEPARTURES)), [1], `dyn ${dyn}`);
+  }
+  t.diagnostic('ok');
+});
+
+test('a station read its alerts without waiting for Train Tracker (key refused)', async (t) => {
+  const s = await setup({
+    api: createApi((call, api) =>
+      call.kind === 'train' ? trainError(api.clock.now(), 101) : defaultWorld(call, api),
+    ),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)), [2]);
+});
+
+test('the scene trigger: flapping, a storm of 40, a start in the future or unknown', async (t) => {
+  let list = [];
+  const s = await setup({
+    api: createApi((call, api) => {
+      const now = api.clock.now();
+      if (call.kind === 'alerts' && call.params.get('stationid')) return alertsDoc(now, list);
+      return defaultWorld(call, api);
+    }),
+  });
+  t.after(() => s.app.stop());
+  const now = CAPTURED_AT;
+  list = [alert(1, now)];
+  await s.begin();
+  // Gone for a read, then back: not new.
+  list = [];
+  await s.wait(5 * MINUTE);
+  list = [alert(1, now)];
+  await s.wait(5 * MINUTE);
+  assert.equal(alertEvents(s.fake).length, 0);
+  // A start in the future, an unknown start: learnt, not announced.
+  list = [
+    alert(1, now),
+    alert(2, now, { EventStart: '2026-11-27T09:00:00' }),
+    alert(3, now, { EventStart: null }),
+  ];
+  await s.wait(5 * MINUTE);
+  assert.equal(alertEvents(s.fake).length, 0);
+  // 40 new alerts at once: 10 events, none at the next read.
+  list = Array.from({ length: 40 }, (_, i) => alert(100 + i, now));
+  await s.wait(5 * MINUTE);
+  assert.equal(alertEvents(s.fake).length, 10);
+  await s.wait(5 * MINUTE);
+  assert.equal(alertEvents(s.fake).length, 10);
+});
+
+test('an alerts answer whose own time stamp is far from its Date: nothing published', async (t) => {
+  const s = await setup({
+    api: createApi((call, api) =>
+      call.kind === 'alerts'
+        ? alertsDoc(api.clock.now() - 4 * MINUTE, [])
+        : defaultWorld(call, api),
+    ),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.deepEqual(published(s.fake, T(FEATURES.ALERTS)), []);
+  assert.match(statusEn(s.fake), /alerts: The CTA real-time data is not updated/);
 });

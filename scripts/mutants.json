@@ -8,14 +8,14 @@
   {
     "name": "count saved after the request",
     "file": "src/app.js",
-    "from": "    q.count += 1;\n    await this.persist();\n    if (gen !== this.gen) return null;",
-    "to": "    await this.persist();\n    if (gen !== this.gen) return null;\n    q.count += 1;"
+    "from": "    q.count += 1;\n    // Not written (the status says so): a restart may count the day from less.\n    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n",
+    "to": "    // Not written (the status says so): a restart may count the day from less.\n    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n    q.count += 1;\n"
   },
   {
     "name": "count not saved before the request",
     "file": "src/app.js",
-    "from": "    q.count += 1;\n    await this.persist();\n",
-    "to": "    q.count += 1;\n"
+    "from": "    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;\n",
+    "to": ""
   },
   {
     "name": "new Chicago day never starts",
@@ -352,5 +352,95 @@
     "file": "src/app.js",
     "from": "      } else if (key && this.accepted[service] === key) {",
     "to": "      } else if (key) {"
+  },
+  {
+    "name": "alert id forgotten after 1 s",
+    "file": "src/constants.js",
+    "from": "export const SEEN_KEEP = 7 * DAY;",
+    "to": "export const SEEN_KEEP = 1000;"
+  },
+  {
+    "name": "no cap of events per read",
+    "file": "src/constants.js",
+    "from": "export const SCENE_EVENTS_PER_READ = 10;",
+    "to": "export const SCENE_EVENTS_PER_READ = 1000;"
+  },
+  {
+    "name": "alert starting in the future announced",
+    "file": "src/app.js",
+    "from": "if (alert.start === null || alert.start > at + 5 * MINUTE) continue;",
+    "to": "if (alert.start === null) continue;"
+  },
+  {
+    "name": "alerts time stamp not checked",
+    "file": "src/app.js",
+    "from": "      if (!kind && Math.abs(read.at - fresh.at) > STAMP_SKEW) kind = 'stale';\n",
+    "to": ""
+  },
+  {
+    "name": "invalid parameter refuses the bus key",
+    "file": "src/cta.js",
+    "from": "const BUS_REFUSED = [/invalid api access key/i, /no api access key/i];",
+    "to": "const BUS_REFUSED = [/invalid api access key/i, /no api access key/i, /invalid parameter/i];"
+  },
+  {
+    "name": "API disabled refuses the key",
+    "file": "src/cta.js",
+    "from": "    if (BUS_DISABLED.test(msg)) return { ok: false, kind: 'disabled' };",
+    "to": "    if (BUS_DISABLED.test(msg)) return { ok: false, kind: 'key_refused' };"
+  },
+  {
+    "name": "absurd persisted pause believed",
+    "file": "src/app.js",
+    "from": "      if (pause.until - wall > PAUSE_BELIEVED) continue;\n",
+    "to": ""
+  },
+  {
+    "name": "quota day reset when it differs",
+    "file": "src/app.js",
+    "from": "if (!q || q.key !== print || q.day < day) {",
+    "to": "if (!q || q.key !== print || q.day !== day) {"
+  },
+  {
+    "name": "button retry not counted",
+    "file": "src/app.js",
+    "from": "    if (q.count >= this.config.dailyBudget) return { ok: false, kind: 'budget' };\n    q.count += 1;",
+    "to": "    if (q.count >= this.config.dailyBudget) return { ok: false, kind: 'budget' };\n    if (!this.probing) q.count += 1;"
+  },
+  {
+    "name": "invalidated bus trips published",
+    "file": "src/constants.js",
+    "from": "export const BUS_SKIP_DYN = Object.freeze([1, 4, 12, 16, 17, 18]);",
+    "to": "export const BUS_SKIP_DYN = Object.freeze([1, 4, 12]);"
+  },
+  {
+    "name": "elevators of other stations kept",
+    "file": "src/app.js",
+    "from": "    if (target.station) return stations.includes(target.station);",
+    "to": "    if (target.station) return true;"
+  },
+  {
+    "name": "bus alert naming stations kept",
+    "file": "src/app.js",
+    "from": "    return alert.services.some((s) => s.type === 'B' && target.routes.includes(s.id));",
+    "to": "    return true;"
+  },
+  {
+    "name": "station alerts wait for Train Tracker",
+    "file": "src/app.js",
+    "from": "    if (watch.kind === 'train' && watch.id.startsWith('4')) return { station: watch.id };\n",
+    "to": ""
+  },
+  {
+    "name": "alerts code 25 an error",
+    "file": "src/cta.js",
+    "from": "  const empty = code === 25 || code === 50;",
+    "to": "  const empty = code === 50;"
+  },
+  {
+    "name": "events sent before /data",
+    "file": "src/app.js",
+    "from": "    if (fresh.length > 0) await this.persist();\n",
+    "to": ""
   }
 ]

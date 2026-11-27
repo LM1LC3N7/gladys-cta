@@ -10,8 +10,8 @@ use of CTA data is governed by the CTA Developer License Agreement and Terms of 
 to use, reproduce, distribute, display and process CTA data, without warranty; the application must not express or
 imply any affiliation with, sponsorship or endorsement by CTA; a credit line is optional ("Data provided by CTA" is
 used here). The CTA Trademark Guidelines for Developers (https://www.transitchicago.com/developers/branding/) are
-followed: no CTA logo, the CTA name is neither the first nor the main word of the name of the integration, which is
-not named after a CTA service. Each user reads the APIs with their own keys from their own Gladys.
+followed as published on that page: no CTA logo, no CTA name as the first or main word of a project name (the name
+of the integration, "Chicago Transit Departures", holds none), no CTA service name, nothing "official". Each user reads the APIs with their own keys from their own Gladys.
 
 The file `test/fixtures/alerts-clark-lake-live.json` is an answer of the Customer Alerts API (station 40380)
 captured on 2026-11-27. It is CTA data, **not covered by the Apache License** of this repository, and

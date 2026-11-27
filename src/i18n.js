@@ -169,6 +169,10 @@ const FAILURES = {
   server: { en: 'CTA server error', fr: 'erreur du serveur de la CTA' },
   http: { en: 'unexpected answer from the CTA', fr: 'réponse inattendue de la CTA' },
   api_error: { en: 'the CTA refused the request', fr: 'la CTA a refusé la requête' },
+  disabled: {
+    en: 'the CTA says its developer API is disabled (no access permitted)',
+    fr: 'la CTA dit que son API développeur est désactivée (aucun accès permis)',
+  },
   format: { en: 'CTA answer not readable', fr: 'réponse de la CTA illisible' },
   too_big: { en: 'CTA answer too large', fr: 'réponse de la CTA trop grande' },
   unreadable: {

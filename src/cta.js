@@ -304,7 +304,10 @@ export function readPrd(item) {
   };
 }
 
-const BUS_REFUSED = [/invalid api access key/i, /no api access key/i, /no api access permitted/i];
+const BUS_REFUSED = [/invalid api access key/i, /no api access key/i];
+// "The Developer API has been disabled by the Transit Authority": the whole
+// API, not the key; a bounded pause, never a refusal of the key.
+const BUS_DISABLED = /no api access permitted/i;
 const BUS_QUOTA = /transaction limit/i;
 const BUS_EMPTY = [/no service scheduled/i, /no arrival times/i];
 const BUS_UNKNOWN = [/no data found/i, /invalid parameter/i];
@@ -332,6 +335,7 @@ export function readBus(json) {
     const msg = readString(entry.msg, 200);
     const stop = readDigits(entry.stpid, /^\d{1,6}$/);
     if (BUS_REFUSED.some((p) => p.test(msg))) return { ok: false, kind: 'key_refused' };
+    if (BUS_DISABLED.test(msg)) return { ok: false, kind: 'disabled' };
     if (BUS_QUOTA.test(msg)) return { ok: false, kind: 'quota' };
     if (BUS_SERVER.test(msg)) return { ok: false, kind: 'server' };
     const status = BUS_EMPTY.some((p) => p.test(msg))
@@ -403,10 +407,12 @@ export function readAlerts(json) {
   const code = readCode(envelope.ErrorCode);
   if (code === null) return { ok: false, kind: 'format' };
   if (code === 900) return { ok: false, kind: 'server' };
-  if (!root || (code !== 0 && code !== 50)) return { ok: false, kind: 'api_error', code };
+  // 25 and 50: no active alert (in the whole network, or for the filter).
+  const empty = code === 25 || code === 50;
+  if (!root || (code !== 0 && !empty)) return { ok: false, kind: 'api_error', code };
   const at = readChicagoTime(root.TimeStamp);
   if (at === null) return { ok: false, kind: 'no_date' };
-  if (code === 50) return { ok: true, at, alerts: [] };
+  if (empty) return { ok: true, at, alerts: [] };
   const list = readList(root.Alert);
   if (!list) return { ok: false, kind: 'format' };
   const alerts = [];

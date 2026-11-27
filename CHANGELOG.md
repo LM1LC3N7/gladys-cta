@@ -21,3 +21,7 @@ the notes of the version's GitHub Release.
 - A daily budget per key, counted per Chicago day and kept in `/data`; the
   read interval stretched to fit it; the pauses the CTA asks for; a refused
   key never sent again until it changes or the button's retry succeeds.
+- Canceled, invalidated and drop-off only bus trips (dynamic types 1, 4, 12, 16,
+  17, 18) are never departures.
+- The alerts of a station leave out the elevators of the other stations of its
+  lines; a station reads its alerts without waiting for Train Tracker.

@@ -55,8 +55,8 @@ of it; errors come in 200 answers (Train Tracker `errCd`, Bus Tracker `error` me
 `ErrorCode`, code 50 = no alert); a refused key is never sent again until it changes or the button's retry
 succeeds; HTTP 401/403 are never a refusal; never sooner than the interval (restart, reconnection, unchanged
 configuration, Discovery; the button only retries a refused key); nothing published for a failed, stale or unreadable answer, nor "no departure"
-for a bus stop no prediction has confirmed. Trademark guidelines: CTA is never the first or main word of the
-integration's name, no CTA logo.
+for a bus stop no prediction has confirmed. Trademark guidelines (current branding page): no CTA name as the first or
+main word of the integration's name, no CTA service name, no CTA logo.
 
 ## Rules
 

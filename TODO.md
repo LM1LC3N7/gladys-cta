@@ -2,10 +2,13 @@
 
 ## Before announcing
 
-- [ ] Rename the repository and the image before the first release? The CTA Trademark Guidelines for Developers
-      ask not to combine a CTA name with one's own name nor to make it the main word of a project name
-      (`gladys-cta`); the manifest name is "Chicago Transit Departures". Louis to decide (repository, image,
-      cover URL).
+- [ ] Rename the repository and the image before the first release? Louis to decide. The current branding page
+      (https://www.transitchicago.com/developers/branding/, read for review r1) asks: no CTA name as the first or main
+      word of a project name, punctuation before a CTA name ("MyTransitApp - CTA version" accepted), no "official",
+      no CTA logo, no CTA service name; it says nothing of repositories. `gladys-cta` puts "cta" after `gladys-` and a
+      hyphen, but it is the only distinguishing word (residual risk with a strict reading). The manifest name,
+      "Chicago Transit Departures", holds no CTA mark. If kept: "Unofficial … data provided by CTA" in the GitHub
+      description of the repository.
 - [ ] Try it with real keys (Train Tracker and Bus Tracker): the answers with a key were only simulated from the
       official documentation (JSON examples of the Train Tracker page and of the Bus Tracker guide v3.0).
 - [ ] Install it on a real Gladys 5.3+ and add a station and a bus stop: device creation, texts, the scene trigger.
@@ -30,9 +33,20 @@
   (`ghcr.io/lm1lc3n7/gladys-cta:0.1.0`).
 - **SDK `^0.16.1`**, the latest published (npm registry, 2026-11-27): no change needed for a read-only device
   integration. `gladys_version >=5.3.0` for `countries: ["US"]`.
-- **Name**: "Chicago Transit Departures", not "CTA …": the CTA Trademark Guidelines for Developers forbid a CTA name
-  as the first or main word of a project name and a name like "Train Tracker"; "Data provided by CTA" is the credit
-  line the CTA terms suggest. No CTA logo on the cover.
+- **Name**: "Chicago Transit Departures": no CTA mark in it (the branding page: no CTA name as the first or main word,
+  punctuation before it, no CTA service name such as "Train Tracker", no "official"); "Data provided by CTA" is the
+  credit line the CTA terms suggest. No CTA logo on the cover (route colors only, allowed).
+- **Bus dynamic types** left out: 1, 4, 12 (cancellation not to be shown: the bus is left out, the safe side), 16, 17
+  (invalidated trips, "should not be shown to the public"), 18 (canceled new trip). Review r1 B1.
+- **Alerts of a station** filtered: an alert naming stations (`T` services) is kept only when one is the watched
+  station (the CTA sends the elevators of every station of the lines, seen live); a bus alert naming stations only
+  when it also names a watched route. A station id 40000-49999 reads its alerts without Train Tracker. Codes 25 and 50
+  are empty lists. Review r1 B2, m3, m4.
+- **"No API access permitted"** (API disabled by the CTA) pauses Bus Tracker (1 min doubled, 6 h at most), never a
+  refused key; "No API access key supplied" stays a refusal (the key is always sent). Review r1 m2.
+- **Scene events**: the alert ids are written to /data before the events leave (no repeat after a kill). The count
+  of a keyed request not written to /data (save failed) is said in the status; a restart may then count the day from
+  less (review r1 m5).
 - **Quotas**: both keys get 100,000 requests a day by default (Train Tracker docs; Bus Tracker guide v3.0 and FAQ,
   "updated from 50,000 to 100,000 in April 2024"). Own budget per key, 10,000 by default (500 to 100,000), counted per
   Chicago date, written to `/data` before each request (a restart keeps it); a later date in `/data` (clock gone
@@ -65,7 +79,10 @@
   API (`routes.aspx`).
 - **Mutation** (milestone 1): 59 mutants of the guards in `scripts/mutants.json`, run one at a time with
   `scripts/mutants.mjs` (copy of the repository, node_modules copied, baseline first): all killed. Dropped as
-  equivalent: "the button reads without a refusal" (the loop over the refused keys is then empty). Five survivors
+  equivalent: "the button reads without a refusal" (the loop over the refused keys is then empty), and (review r1)
+  "an alert without start announced" (a null start reads as 1970 and fails the 24 h test anyway; the test of an
+  unknown start stays). Review r1: 16 more mutants (the reviewer's 9 survivors and the new code), 74 in all, all
+  killed. Five survivors
   of the first run got a test: the budget not spent during a pause, a pause kept in /data across a restart, the next
   round armed after a failed one, an unknown bus stop asked again after 30 min, the merge of a refusal.
 - **/data unreadable**: never overwritten; read again every 10 s on its own timer; once readable, merged on the

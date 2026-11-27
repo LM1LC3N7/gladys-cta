@@ -19,7 +19,7 @@ Customer Alerts API was read live (2026-11-27).
   own daily budget (10,000 by default).
 - Terms: [CTA Developer License Agreement and Terms of Use](https://www.transitchicago.com/developers/terms/)
   and the CTA Trademark Guidelines for Developers (no CTA logo, no CTA name as
-  the name of the project). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+  the first or main word of the name, no CTA service name). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Development
 

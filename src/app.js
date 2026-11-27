@@ -90,7 +90,7 @@ const KEYED = ['train', 'bus'];
 const SERVICES = ['train', 'bus', 'alerts'];
 /** A persisted pause longer than this is not believed (a quota pause lasts a day at most). */
 const PAUSE_BELIEVED = DAY + 2 * PAUSE_MAX;
-const PAUSE_KINDS = ['rate', 'server', 'http', 'api_error', 'quota'];
+const PAUSE_KINDS = ['rate', 'server', 'http', 'api_error', 'quota', 'disabled'];
 
 const isTime = (value) => Number.isFinite(value) && value > 0;
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -801,7 +801,8 @@ export class CtaApp {
     const q = this.quotaFor(service);
     if (q.count >= this.config.dailyBudget) return { ok: false, kind: 'budget' };
     q.count += 1;
-    await this.persist();
+    // Not written (the status says so): a restart may count the day from less.
+    if (!(await this.persist()) && this.storeStatus !== 'unreadable') this.saveFailed = true;
     if (gen !== this.gen) return null;
     this.lastServiceMono[service] = this.monotonic();
     return this.call(url, gen, service);
@@ -879,7 +880,7 @@ export class CtaApp {
     } else if (read.kind === 'quota') {
       this.startPause(service, { kind: 'quota' });
       this.logger.warn(`The CTA says the daily limit of the ${service} key is reached`);
-    } else if (read.kind === 'server' || read.kind === 'api_error') {
+    } else if (['server', 'api_error', 'disabled'].includes(read.kind)) {
       this.startPause(service, { kind: read.kind });
     }
   }
@@ -1082,6 +1083,9 @@ export class CtaApp {
    * Tracker) or the bus routes seen at its stop; null until a read told them.
    */
   alertTarget(watch) {
+    // A station id of the configuration needs no read of Train Tracker (an
+    // unknown one gets an error answer from the alerts API).
+    if (watch.kind === 'train' && watch.id.startsWith('4')) return { station: watch.id };
     const info = this.learnt.get(watchKey(watch));
     if (!info || info.fingerprint !== this.fingerprint(watch)) return null;
     if (watch.kind === 'train') return info.station ? { station: info.station } : null;
@@ -1129,7 +1133,7 @@ export class CtaApp {
       this.pauseUntilMono.alerts = null;
       delete this.persisted.pause.alerts;
       this.alertsDue.set(key, { dueMono: start + ALERTS_INTERVAL, level: 0 });
-      await this.onAlerts(watch, read.alerts, fresh.at, gen);
+      await this.onAlerts(watch, concerning(read.alerts, target), fresh.at, gen);
     }
   }
 
@@ -1197,6 +1201,9 @@ export class CtaApp {
       .sort((a, b) => b[1] - a[1])
       .slice(0, SEEN_MAX);
     this.persisted.watches[key] = { fingerprint, seen: Object.fromEntries(kept) };
+    // The ids reach /data before the events leave: a process killed while
+    // sending never announces them a second time.
+    if (fresh.length > 0) await this.persist();
     const device = watchIds(this.gladys, watch).device;
     for (const alert of fresh.slice(0, SCENE_EVENTS_PER_READ)) {
       if (gen !== this.gen) return;
@@ -1462,6 +1469,22 @@ export class CtaApp {
       this.logger.warn(`Status not published (${err?.name ?? 'Error'})`);
     }
   }
+}
+
+/**
+ * The alerts that concern a watch. The CTA answers a station with the alerts
+ * of its lines too, among them the elevators of every other station of those
+ * lines (seen live on 2026-11-27): an alert naming stations (`T` services)
+ * is kept only when one of them is the watched station; for bus routes, only
+ * when it also names one of the routes. Alerts without a station are kept.
+ */
+export function concerning(alerts, target) {
+  return alerts.filter((alert) => {
+    const stations = alert.services.filter((s) => s.type === 'T').map((s) => s.id);
+    if (stations.length === 0) return true;
+    if (target.station) return stations.includes(target.station);
+    return alert.services.some((s) => s.type === 'B' && target.routes.includes(s.id));
+  });
 }
 
 /** The flat data of the scene trigger (≤ 30 keys, texts bounded). */

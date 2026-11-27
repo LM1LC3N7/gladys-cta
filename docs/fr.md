@@ -58,12 +58,17 @@ Les heures sont celles de Chicago. Chaque lecture publie toutes les valeurs :
 un départ disparu devient « Aucun départ suivant (lu à 05:15) », jamais un
 nombre laissé derrière. Une lecture en échec, périmée ou illisible ne publie
 **rien** (pas de 0) : la page de configuration dit pourquoi et depuis quand.
-Les bus annulés et les courses sans montée ne sont pas des départs.
+Les courses de bus annulées, invalidées ou sans montée ne sont pas des départs
+(types dynamiques 1, 4, 12, 16, 17 et 18 de Bus Tracker ; pour le 12, la CTA
+ne veut pas que l'annulation soit montrée : le bus est simplement écarté).
 
 Les alertes d'un arrêt de bus sont celles des lignes vues à l'arrêt par Bus
 Tracker (l'API Customer Alerts ne connaît pas les arrêts de bus). Celles d'une
-station sont celles que la CTA donne pour la station, qui comprennent les
-alertes de ses lignes.
+station sont celles de la station et de ses lignes : pour une station, la CTA
+envoie aussi les alertes des autres stations de ses lignes (ascenseurs en
+panne ailleurs), qui sont écartées. Sans clé, les alertes d'une station
+(40000-49999) sont lues quand même ; celles d'un quai (30000-39999) et d'un
+arrêt de bus attendent une première lecture de leurs départs.
 
 Le déclencheur de scène **Nouvelle alerte CTA à une station ou un arrêt** part
 une fois pour une alerte vue pour la première fois à une station ou un arrêt
@@ -75,7 +80,8 @@ majeures, ou les autres.
 
 - Une requête Train Tracker par station et par lecture, une requête Bus
   Tracker pour tous les arrêts de bus par lecture ; les alertes toutes les
-  5 minutes, une requête par station ou arrêt. Une requête à la fois, à 1 s
+  5 minutes (à chaque lecture quand l'intervalle est plus long), une requête
+  par station ou arrêt. Une requête à la fois, à 1 s
   d'écart au moins.
 - La CTA accorde à chaque clé **100 000 requêtes par jour** par défaut
   (documentation lue le 2026-11-27). L'intégration tient son propre **budget

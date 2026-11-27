@@ -106,7 +106,12 @@ test('Bus Tracker: predictions, per-stop errors, whole-request errors', () => {
   assert.equal(readBus(busDoc(prd(NOW, 3))).prds.length, 1);
   const whole = (msg) => readBus(busDoc(null, [{ msg }])).kind;
   assert.equal(whole('Invalid API access key supplied'), 'key_refused');
-  assert.equal(whole('No API access permitted'), 'key_refused');
+  assert.equal(whole('No API access permitted'), 'disabled');
+  assert.equal(whole('No API access key supplied'), 'key_refused');
+  assert.equal(
+    readAlerts({ CTAAlerts: { TimeStamp: '2026-11-27T05:16:15', ErrorCode: '25' } }).alerts.length,
+    0,
+  );
   assert.equal(whole('Transaction limit for current day has been exceeded.'), 'quota');
   assert.equal(whole('Internal server error - Unable to complete request at this time'), 'server');
   assert.equal(whole('Unsupported version requested'), 'api_error');

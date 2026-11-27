@@ -24,6 +24,8 @@ import {
   published,
   setup,
   statusEn,
+  alert,
+  alertsDoc,
   trainError,
 } from './helpers/setup.js';
 
@@ -526,4 +528,104 @@ test('a round that fails still arms the next one', async (t) => {
   await s.wait(3 * MINUTE);
   assert.ok(s.api.count('train') >= 4, `${s.api.count('train')} rounds`);
   Object.defineProperty(s.gladys, 'devices', { configurable: true, value: devices });
+});
+
+test('"Invalid parameter provided" for a stop is an unknown stop, never a refused key', async (t) => {
+  const store = createMemoryStore();
+  const s = await setup({
+    store,
+    api: createApi((call, a) =>
+      call.kind === 'bus'
+        ? busDoc(null, [{ stpid: '456', msg: 'Invalid parameter provided' }])
+        : defaultWorld(call, a),
+    ),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.equal(store.data.refused.bus ?? null, null);
+  assert.match(statusEn(s.fake), /does not know this id/);
+  assert.doesNotMatch(statusEn(s.fake), /refused the API key/);
+});
+
+test('"No API access permitted" pauses the service, never refuses the key', async (t) => {
+  const store = createMemoryStore();
+  const s = await setup({
+    store,
+    api: createApi((call, a) =>
+      call.kind === 'bus'
+        ? busDoc(null, [{ msg: 'No API access permitted' }])
+        : defaultWorld(call, a),
+    ),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.equal(store.data.refused.bus ?? null, null);
+  assert.equal(store.data.pause.bus.kind, 'disabled');
+});
+
+test('a pause in /data longer than a day and 12 h is not believed', async (t) => {
+  const store = createMemoryStore({
+    pause: { train: { until: CAPTURED_AT + 10 * 24 * HOUR, kind: 'rate', level429: 1 } },
+  });
+  const s = await setup({ store });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.equal(s.api.count('train'), 1);
+});
+
+test('a quota day later than today (the clock went back) keeps counting on it', async (t) => {
+  const probe = await setup();
+  probe.app.load();
+  const salt = probe.app.persisted.salt;
+  const print = probe.app.keyPrint(TRAIN_KEY);
+  await probe.app.stop();
+  const store = createMemoryStore({
+    salt,
+    quota: { train: { day: '2026-11-28', count: 500, key: print } },
+  });
+  const s = await setup({ store, config: { ...HOME, daily_budget: '500' } });
+  t.after(() => s.app.stop());
+  await s.begin();
+  assert.equal(s.api.count('train'), 0);
+  assert.equal(store.data.quota.train.day, '2026-11-28');
+});
+
+test('the button retry is counted in the budget of the key', async (t) => {
+  const store = createMemoryStore();
+  const api = createApi((call, a) =>
+    call.kind === 'train' ? trainError(a.clock.now(), 101) : defaultWorld(call, a),
+  );
+  const s = await setup({ store, api });
+  t.after(() => s.app.stop());
+  await s.begin();
+  await s.wait(60 * SECOND);
+  const job = s.app.testConnection();
+  await s.wait(2 * SECOND);
+  await job;
+  assert.equal(s.api.count('train'), 2);
+  assert.equal(store.data.quota.train.count, 2);
+});
+
+test('the alert ids reach /data before the scene events leave', async (t) => {
+  const store = createMemoryStore();
+  const extra = [];
+  const s = await setup({
+    store,
+    api: createApi((call, a) => {
+      const now = a.clock.now();
+      if (call.kind === 'alerts' && call.params.get('stationid')) return alertsDoc(now, extra);
+      return defaultWorld(call, a);
+    }),
+  });
+  t.after(() => s.app.stop());
+  await s.begin();
+  let seenAtSend = null;
+  const publish = s.gladys.publishSceneEvent.bind(s.gladys);
+  s.gladys.publishSceneEvent = (key, data) => {
+    seenAtSend = store.data.watches.train1.seen[data.alert_id];
+    return publish(key, data);
+  };
+  extra.push(alert(7, s.clock.now()));
+  await s.wait(5 * MINUTE);
+  assert.ok(Number.isFinite(seenAtSend), 'the id was saved before the event');
 });

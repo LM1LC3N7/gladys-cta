@@ -52,12 +52,18 @@ lines filter keeps the device.
 The times are Chicago times. Every read publishes every value: a departure
 that is gone becomes "No following departure (read 05:15)", never a number
 left behind. A failed, stale or unreadable read publishes **nothing** (no 0):
-the configuration page says why and since when. Canceled buses and drop-off
-only trips are not departures.
+the configuration page says why and since when. Canceled, invalidated and
+drop-off only bus trips are not departures (Bus Tracker dynamic types 1, 4, 12,
+16, 17 and 18; for 12 the CTA does not want the cancellation shown: the bus
+is simply left out).
 
 The bus alerts are those of the routes seen at the stop by Bus Tracker (the
-Customer Alerts API does not know bus stops). The train alerts are those the
-CTA gives for the station, which include the alerts of its lines.
+Customer Alerts API does not know bus stops). The train alerts are those of
+the station and of its lines: the CTA also sends, for a station, the alerts
+of the other stations of its lines (elevators out of service elsewhere),
+which are left out. Without a key, the alerts of a station (40000-49999) are
+read all the same; those of a platform stop (30000-39999) and of a bus stop
+wait for a first read of their departures.
 
 The scene trigger **New CTA alert at a station or stop** fires once for an
 alert seen for the first time at a watched station or stop, when it started
@@ -67,8 +73,8 @@ there). You can keep major alerts only, or the others.
 ## Requests and quotas
 
 - One Train Tracker request per station and per read, one Bus Tracker request
-  for all the bus stops per read; the alerts every 5 minutes, one request per
-  station or stop. One request at a time, 1 s apart at least.
+  for all the bus stops per read; the alerts every 5 minutes (at each read
+  when the read interval is longer), one request per station or stop. One request at a time, 1 s apart at least.
 - The CTA grants each key **100,000 requests a day** by default (docs read on
   2026-11-27). The integration keeps its own **daily budget per key** (10,000
   by default, setting "Daily budget per key"): it counts the requests of the
