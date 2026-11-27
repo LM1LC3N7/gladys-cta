@@ -96,3 +96,7 @@
 - **/data unreadable**: never overwritten; read again every 10 s on its own timer; once readable, merged on the
   safe side (larger count of the day, later pause, a refusal of memory kept, a refusal of the file lifted only by a
   key the CTA accepted in this process).
+
+## Next patch
+
+- Review minors: see `_lots/lot25/reviews/cta-r5.md` (mutant 94 : échec de sauvegarde en début de tour, lastSaveFailed partagé).
