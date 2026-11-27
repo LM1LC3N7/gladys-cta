@@ -1,6 +1,6 @@
 {
   "name": "gladys-chicago-transit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Unofficial Chicago transit integration for Gladys Assistant: next 'L' trains and buses at your stops and service alerts, with data provided by CTA (Train Tracker, Bus Tracker and Customer Alerts APIs).",
   "type": "module",

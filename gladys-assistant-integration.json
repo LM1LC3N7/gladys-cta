@@ -6,8 +6,8 @@
     "en": "Unofficial. Next trains, buses and alerts at your Chicago stops (data provided by CTA).",
     "fr": "Non officiel. Prochains trains, bus et alertes à vos arrêts de Chicago (données de la CTA)."
   },
-  "version": "0.1.0",
-  "docker_image": "ghcr.io/lm1lc3n7/gladys-chicago-transit:0.1.0",
+  "version": "0.1.1",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-chicago-transit:0.1.1",
   "gladys_version": ">=5.3.0",
   "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-chicago-transit/main/cover.png",
   "categories": ["transport"],

@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-27
+
 ### Added
 
 - The next 'L' trains (Train Tracker API) at up to four stations or platform
@@ -26,3 +28,6 @@ the notes of the version's GitHub Release.
 - The alerts of a station leave out the elevator and accessibility alerts of
   the other stations of its lines (never a closure nor a major alert); a
   station reads its alerts without waiting for Train Tracker.
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-chicago-transit/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-chicago-transit/releases/tag/v0.1.1
