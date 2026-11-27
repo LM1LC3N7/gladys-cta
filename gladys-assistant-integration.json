@@ -1,177 +1,678 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Chicago Transit Departures",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Unofficial. Next trains, buses and alerts at your Chicago stops (data provided by CTA).",
+    "fr": "Non officiel. Prochains trains, bus et alertes à vos arrêts de Chicago (données de la CTA)."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-cta:0.1.0",
+  "gladys_version": ">=5.3.0",
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-cta/main/cover.png",
+  "categories": ["transport"],
+  "countries": ["US"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Chicago trains and buses",
+        "fr": "Trains et bus de Chicago"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Unofficial, not affiliated with the Chicago Transit Authority. Data provided by CTA. The next 'L' trains (Train Tracker API) and buses (Bus Tracker API) at up to four stations and four bus stops, and the service alerts in effect there (Customer Alerts API). Each of the two first APIs needs its own free key, asked on the CTA Developer Center; the alerts need none. Each key has a daily quota: the integration counts its requests and stays within the daily budget below.",
+        "fr": "Non officiel, sans lien avec la Chicago Transit Authority. Données fournies par la CTA. Les prochains trains du 'L' (API Train Tracker) et bus (API Bus Tracker) à quatre stations et quatre arrêts de bus au plus, et les alertes de service en cours (API Customer Alerts). Chacune des deux premières API demande sa propre clé gratuite, à demander sur le CTA Developer Center ; les alertes n'en demandent pas. Chaque clé a un quota quotidien : l'intégration compte ses requêtes et reste dans le budget quotidien ci-dessous."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://www.transitchicago.com/developers/",
+          "label": {
+            "en": "CTA Developer Center",
+            "fr": "CTA Developer Center"
+          }
+        },
+        {
+          "url": "https://www.transitchicago.com/developers/traintrackerapply/",
+          "label": {
+            "en": "Ask for a Train Tracker key",
+            "fr": "Demander une clé Train Tracker"
+          }
+        },
+        {
+          "url": "https://www.ctabustracker.com/",
+          "label": {
+            "en": "Bus Tracker (account, then API key request)",
+            "fr": "Bus Tracker (compte, puis demande de clé d'API)"
+          }
+        },
+        {
+          "url": "https://www.transitchicago.com/developers/terms/",
+          "label": {
+            "en": "CTA Developer License Agreement and Terms of Use",
+            "fr": "CTA Developer License Agreement and Terms of Use"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "train_key",
+      "type": "secret",
+      "label": {
+        "en": "Train Tracker API key",
+        "fr": "Clé d'API Train Tracker"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The free key of the Train Tracker API, kept by Gladys in its database, never shown again, sent only to the CTA. Leave empty when you watch no station.",
+        "fr": "La clé gratuite de l'API Train Tracker, gardée par Gladys dans sa base, jamais réaffichée, envoyée seulement à la CTA. Laissez vide si vous ne suivez aucune station."
+      },
+      "required": false
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "bus_key",
+      "type": "secret",
+      "label": {
+        "en": "Bus Tracker API key",
+        "fr": "Clé d'API Bus Tracker"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The free key of the Bus Tracker API, kept by Gladys in its database, never shown again, sent only to the CTA. Leave empty when you watch no bus stop.",
+        "fr": "La clé gratuite de l'API Bus Tracker, gardée par Gladys dans sa base, jamais réaffichée, envoyée seulement à la CTA. Laissez vide si vous ne suivez aucun arrêt de bus."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Language of the texts",
+        "fr": "Langue des textes"
+      },
+      "description": {
+        "en": "The language of the device names and the departure texts (the CTA texts stay in English).",
+        "fr": "La langue des noms d'appareils et des textes de départ (les textes de la CTA restent en anglais)."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "en",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
+      "key": "refresh_seconds",
       "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "label": {
+        "en": "Read interval (s)",
+        "fr": "Intervalle de lecture (s)"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "How often the departures are read, in seconds (30 to 600). Stretched when the daily budget of a key would not hold it. The alerts are read every 5 minutes.",
+        "fr": "Fréquence de lecture des départs, en secondes (30 à 600). Allongée quand le budget quotidien d'une clé ne la tiendrait pas. Les alertes sont lues toutes les 5 minutes."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": 60,
+      "min": 30,
+      "max": 600
+    },
+    {
+      "key": "daily_budget",
+      "type": "number",
+      "label": {
+        "en": "Daily budget per key (requests)",
+        "fr": "Budget quotidien par clé (requêtes)"
+      },
+      "description": {
+        "en": "Requests per key and per Chicago day at most (500 to 100000; the CTA grants 100000 a day by default). One station costs one request per read, all the bus stops together one request per read.",
+        "fr": "Requêtes par clé et par jour de Chicago au plus (500 à 100000 ; la CTA accorde 100000 par jour par défaut). Une station coûte une requête par lecture, tous les arrêts de bus ensemble une requête par lecture."
+      },
+      "required": false,
+      "default": 10000,
+      "min": 500,
+      "max": 100000
+    },
+    {
+      "key": "train1",
+      "type": "section",
+      "label": {
+        "en": "Train station 1",
+        "fr": "Station de train 1"
+      },
+      "description": {
+        "en": "The id of a station (40000-49999, e.g. 40380 for Clark/Lake: every platform) or of a platform stop (30000-39999: one direction), from the CTA 'L' stops list (City of Chicago data portal).",
+        "fr": "L'identifiant d'une station (40000-49999, ex. 40380 pour Clark/Lake : tous les quais) ou d'un quai (30000-39999 : une direction), d'après la liste des arrêts du 'L' (portail de données de la ville de Chicago)."
+      }
+    },
+    {
+      "key": "train1_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Office",
+        "fr": "ex. Bureau"
+      },
+      "required": false
+    },
+    {
+      "key": "train1_station",
+      "type": "string",
+      "label": {
+        "en": "Station or platform stop id",
+        "fr": "Identifiant de station ou de quai"
+      },
+      "placeholder": {
+        "en": "e.g. 40380",
+        "fr": "ex. 40380"
+      },
+      "required": false
+    },
+    {
+      "key": "train1_routes",
+      "type": "string",
+      "label": {
+        "en": "Lines (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these lines, comma separated (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Empty: every line.",
+        "fr": "Seulement ces lignes, séparées par des virgules (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. Brown, Green",
+        "fr": "ex. Brown, Green"
+      },
+      "required": false
+    },
+    {
+      "key": "train2",
+      "type": "section",
+      "label": {
+        "en": "Train station 2",
+        "fr": "Station de train 2"
+      }
+    },
+    {
+      "key": "train2_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Office",
+        "fr": "ex. Bureau"
+      },
+      "required": false
+    },
+    {
+      "key": "train2_station",
+      "type": "string",
+      "label": {
+        "en": "Station or platform stop id",
+        "fr": "Identifiant de station ou de quai"
+      },
+      "placeholder": {
+        "en": "e.g. 40380",
+        "fr": "ex. 40380"
+      },
+      "required": false
+    },
+    {
+      "key": "train2_routes",
+      "type": "string",
+      "label": {
+        "en": "Lines (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these lines, comma separated (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Empty: every line.",
+        "fr": "Seulement ces lignes, séparées par des virgules (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. Brown, Green",
+        "fr": "ex. Brown, Green"
+      },
+      "required": false
+    },
+    {
+      "key": "train3",
+      "type": "section",
+      "label": {
+        "en": "Train station 3",
+        "fr": "Station de train 3"
+      }
+    },
+    {
+      "key": "train3_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Office",
+        "fr": "ex. Bureau"
+      },
+      "required": false
+    },
+    {
+      "key": "train3_station",
+      "type": "string",
+      "label": {
+        "en": "Station or platform stop id",
+        "fr": "Identifiant de station ou de quai"
+      },
+      "placeholder": {
+        "en": "e.g. 40380",
+        "fr": "ex. 40380"
+      },
+      "required": false
+    },
+    {
+      "key": "train3_routes",
+      "type": "string",
+      "label": {
+        "en": "Lines (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these lines, comma separated (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Empty: every line.",
+        "fr": "Seulement ces lignes, séparées par des virgules (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. Brown, Green",
+        "fr": "ex. Brown, Green"
+      },
+      "required": false
+    },
+    {
+      "key": "train4",
+      "type": "section",
+      "label": {
+        "en": "Train station 4",
+        "fr": "Station de train 4"
+      }
+    },
+    {
+      "key": "train4_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Office",
+        "fr": "ex. Bureau"
+      },
+      "required": false
+    },
+    {
+      "key": "train4_station",
+      "type": "string",
+      "label": {
+        "en": "Station or platform stop id",
+        "fr": "Identifiant de station ou de quai"
+      },
+      "placeholder": {
+        "en": "e.g. 40380",
+        "fr": "ex. 40380"
+      },
+      "required": false
+    },
+    {
+      "key": "train4_routes",
+      "type": "string",
+      "label": {
+        "en": "Lines (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these lines, comma separated (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Empty: every line.",
+        "fr": "Seulement ces lignes, séparées par des virgules (Red, Blue, Brown, Green, Orange, Purple, Pink, Yellow). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. Brown, Green",
+        "fr": "ex. Brown, Green"
+      },
+      "required": false
+    },
+    {
+      "key": "bus1",
+      "type": "section",
+      "label": {
+        "en": "Bus stop 1",
+        "fr": "Arrêt de bus 1"
+      },
+      "description": {
+        "en": "The id of a bus stop (digits, e.g. 456): shown on the sign of the stop and on ctabustracker.com. A stop serves one direction.",
+        "fr": "L'identifiant d'un arrêt de bus (chiffres, ex. 456) : affiché sur le panneau de l'arrêt et sur ctabustracker.com. Un arrêt dessert une direction."
+      }
+    },
+    {
+      "key": "bus1_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Home stop",
+        "fr": "ex. Arrêt maison"
+      },
+      "required": false
+    },
+    {
+      "key": "bus1_stop",
+      "type": "string",
+      "label": {
+        "en": "Bus stop id",
+        "fr": "Identifiant d'arrêt de bus"
+      },
+      "placeholder": {
+        "en": "e.g. 456",
+        "fr": "ex. 456"
+      },
+      "required": false
+    },
+    {
+      "key": "bus1_routes",
+      "type": "string",
+      "label": {
+        "en": "Routes (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these routes, comma separated (e.g. 20, X9). Empty: every route.",
+        "fr": "Seulement ces lignes, séparées par des virgules (ex. 20, X9). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. 20",
+        "fr": "ex. 20"
+      },
+      "required": false
+    },
+    {
+      "key": "bus2",
+      "type": "section",
+      "label": {
+        "en": "Bus stop 2",
+        "fr": "Arrêt de bus 2"
+      }
+    },
+    {
+      "key": "bus2_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Home stop",
+        "fr": "ex. Arrêt maison"
+      },
+      "required": false
+    },
+    {
+      "key": "bus2_stop",
+      "type": "string",
+      "label": {
+        "en": "Bus stop id",
+        "fr": "Identifiant d'arrêt de bus"
+      },
+      "placeholder": {
+        "en": "e.g. 456",
+        "fr": "ex. 456"
+      },
+      "required": false
+    },
+    {
+      "key": "bus2_routes",
+      "type": "string",
+      "label": {
+        "en": "Routes (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these routes, comma separated (e.g. 20, X9). Empty: every route.",
+        "fr": "Seulement ces lignes, séparées par des virgules (ex. 20, X9). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. 20",
+        "fr": "ex. 20"
+      },
+      "required": false
+    },
+    {
+      "key": "bus3",
+      "type": "section",
+      "label": {
+        "en": "Bus stop 3",
+        "fr": "Arrêt de bus 3"
+      }
+    },
+    {
+      "key": "bus3_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Home stop",
+        "fr": "ex. Arrêt maison"
+      },
+      "required": false
+    },
+    {
+      "key": "bus3_stop",
+      "type": "string",
+      "label": {
+        "en": "Bus stop id",
+        "fr": "Identifiant d'arrêt de bus"
+      },
+      "placeholder": {
+        "en": "e.g. 456",
+        "fr": "ex. 456"
+      },
+      "required": false
+    },
+    {
+      "key": "bus3_routes",
+      "type": "string",
+      "label": {
+        "en": "Routes (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these routes, comma separated (e.g. 20, X9). Empty: every route.",
+        "fr": "Seulement ces lignes, séparées par des virgules (ex. 20, X9). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. 20",
+        "fr": "ex. 20"
+      },
+      "required": false
+    },
+    {
+      "key": "bus4",
+      "type": "section",
+      "label": {
+        "en": "Bus stop 4",
+        "fr": "Arrêt de bus 4"
+      }
+    },
+    {
+      "key": "bus4_name",
+      "type": "string",
+      "label": {
+        "en": "Name (optional)",
+        "fr": "Nom (facultatif)"
+      },
+      "placeholder": {
+        "en": "e.g. Home stop",
+        "fr": "ex. Arrêt maison"
+      },
+      "required": false
+    },
+    {
+      "key": "bus4_stop",
+      "type": "string",
+      "label": {
+        "en": "Bus stop id",
+        "fr": "Identifiant d'arrêt de bus"
+      },
+      "placeholder": {
+        "en": "e.g. 456",
+        "fr": "ex. 456"
+      },
+      "required": false
+    },
+    {
+      "key": "bus4_routes",
+      "type": "string",
+      "label": {
+        "en": "Routes (optional)",
+        "fr": "Lignes (facultatif)"
+      },
+      "description": {
+        "en": "Only these routes, comma separated (e.g. 20, X9). Empty: every route.",
+        "fr": "Seulement ces lignes, séparées par des virgules (ex. 20, X9). Vide : toutes les lignes."
+      },
+      "placeholder": {
+        "en": "e.g. 20",
+        "fr": "ex. 20"
+      },
+      "required": false
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test",
+      "label": {
+        "en": "Show the last read / retry the key",
+        "fr": "Voir la dernière lecture / réessayer la clé"
+      },
+      "description": {
+        "en": "Shows what the last read of each station and stop gave. When the CTA refused a key, sends one request with it (30 s at least after the previous one).",
+        "fr": "Montre ce qu'a donné la dernière lecture de chaque station et arrêt. Si la CTA a refusé une clé, envoie une requête avec elle (30 s au moins après la précédente)."
+      },
+      "timeout_seconds": 45
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "new_alert",
+      "label": {
+        "en": "New CTA alert at a station or stop",
+        "fr": "Nouvelle alerte CTA à une station ou un arrêt"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "An alert in effect appears for the first time at a watched station or bus stop (started within the last 24 hours).",
+        "fr": "Une alerte en cours apparaît pour la première fois à une station ou un arrêt suivi (commencée dans les dernières 24 heures)."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Station or stop",
+            "fr": "Station ou arrêt"
+          },
+          "required": true
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "major",
+          "type": "select",
+          "label": {
+            "en": "Major alert",
+            "fr": "Alerte majeure"
+          },
+          "required": false,
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "yes",
+              "label": {
+                "en": "Major alerts only",
+                "fr": "Alertes majeures seulement"
+              }
+            },
+            {
+              "value": "no",
+              "label": {
+                "en": "Other alerts only",
+                "fr": "Autres alertes seulement"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "headline",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Headline",
+            "fr": "Titre"
+          }
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "label": {
+            "en": "Short description",
+            "fr": "Description courte"
+          }
+        },
+        {
+          "key": "impact",
+          "type": "string",
+          "label": {
+            "en": "Impact",
+            "fr": "Impact"
+          }
+        },
+        {
+          "key": "severity",
+          "type": "number",
+          "label": {
+            "en": "Severity (0-99)",
+            "fr": "Gravité (0-99)"
+          }
+        },
+        {
+          "key": "alert_id",
+          "type": "string",
+          "label": {
+            "en": "Alert id",
+            "fr": "Identifiant de l'alerte"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Link",
+            "fr": "Lien"
+          }
         }
       ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
-    }
-  ],
-  "widgets": [
-    {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
-      },
-      "icon": "activity",
-      "action_timeout_seconds": 15
     }
   ]
 }

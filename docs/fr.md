@@ -1,67 +1,131 @@
-# Template de démonstration
+# Chicago Transit Departures
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Les **prochains trains du 'L'** à quatre stations au plus, les **prochains
+bus** à quatre arrêts au plus, et les **alertes de service** en cours, dans
+Gladys. Données fournies par la CTA.
 
-## Ce que vous obtenez
+Cette intégration n'est pas officielle : elle n'est ni liée à la Chicago
+Transit Authority, ni approuvée ni parrainée par elle, et ce n'est pas une
+source officielle. Vérifiez sur transitchicago.com ou aux panneaux des
+stations avant de partir. Elle n'a **jamais été testée avec une vraie clé** ni
+sur une vraie installation de Gladys par son auteur : Train Tracker et Bus
+Tracker ont été simulés d'après leur documentation officielle ; l'API Customer
+Alerts (sans clé) a été lue en vrai.
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Pour commencer
 
-## Configuration
+1. **Demandez les clés gratuites** dont vous avez besoin sur le
+   [CTA Developer Center](https://www.transitchicago.com/developers/) :
+   - trains : le [formulaire de clé Train Tracker](https://www.transitchicago.com/developers/traintrackerapply/)
+     (réponse par e-mail) ;
+   - bus : créez un compte sur [ctabustracker.com](https://www.ctabustracker.com/)
+     et demandez-y la clé de l'API Bus Tracker (réponse par e-mail).
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+   Les alertes ne demandent pas de clé. Seule la clé de ce que vous suivez est
+   nécessaire.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+2. **Trouvez les identifiants.** Une station de train est un nombre de 40000 à
+   49999 (ex. 40380 pour Clark/Lake : tous les quais) ; un quai, de 30000 à
+   39999, ne garde qu'une direction. Ils sont dans la liste « CTA – System
+   Information – List of 'L' Stops » du portail de données de la ville de
+   Chicago. L'identifiant d'un arrêt de bus est affiché sur son panneau et sur
+   ctabustracker.com (ex. 456).
+3. **Installez l'intégration**, saisissez les clés et les identifiants dans sa
+   configuration, et enregistrez. Ouvrez l'onglet **Découverte** et appuyez sur
+   **Ajouter** pour chaque station ou arrêt. Son nom devient celui de la CTA
+   (« Clark/Lake (trains du 'L') ») après la première lecture, sauf si vous en
+   avez saisi un.
 
-## Actions
+**Un appareil par station ou arrêt.** Un appareil appartient à un
+emplacement et à son identifiant : si vous saisissez un autre identifiant
+dans un emplacement, l'intégration propose un nouvel appareil ; l'ancien n'est
+plus mis à jour et garde ses dernières valeurs (la page de configuration le
+nomme sous « Plus mis à jour » : supprimez-le dans Gladys). Changer le filtre
+de lignes garde l'appareil.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+## Ce que montre chaque appareil
 
-## Scènes
+| Fonction                | Type     | Contenu                                                                                                                                                |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Prochain départ         | texte    | « Green Line → Harlem/Lake dans 4 min (05:18) », « à l'approche », « en retard » et « horaire théorique » (pas de suivi en direct) quand la CTA le dit |
+| Départ suivant          | texte    | la même chose pour le suivant                                                                                                                          |
+| Départs prévus (30 min) | compteur | pour les scènes, ex. « plus de 0 »                                                                                                                     |
+| Départs                 | texte    | « 05:14 · Green Line → Harlem/Lake 4, 9 min · Brown Line → Kimball 11 min »                                                                            |
+| Alertes en cours        | compteur | alertes de la station (ou des lignes de bus vues à l'arrêt)                                                                                            |
+| Alerte                  | texte    | la première alerte (majeure d'abord, puis la plus grave) et combien d'autres                                                                           |
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Les heures sont celles de Chicago. Chaque lecture publie toutes les valeurs :
+un départ disparu devient « Aucun départ suivant (lu à 05:15) », jamais un
+nombre laissé derrière. Une lecture en échec, périmée ou illisible ne publie
+**rien** (pas de 0) : la page de configuration dit pourquoi et depuis quand.
+Les bus annulés et les courses sans montée ne sont pas des départs.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+Les alertes d'un arrêt de bus sont celles des lignes vues à l'arrêt par Bus
+Tracker (l'API Customer Alerts ne connaît pas les arrêts de bus). Celles d'une
+station sont celles que la CTA donne pour la station, qui comprennent les
+alertes de ses lignes.
 
-## Tableau de bord
+Le déclencheur de scène **Nouvelle alerte CTA à une station ou un arrêt** part
+une fois pour une alerte vue pour la première fois à une station ou un arrêt
+suivi, si elle a commencé dans les dernières 24 heures (la première lecture
+apprend seulement les alertes déjà là). Vous pouvez ne garder que les alertes
+majeures, ou les autres.
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+## Requêtes et quotas
+
+- Une requête Train Tracker par station et par lecture, une requête Bus
+  Tracker pour tous les arrêts de bus par lecture ; les alertes toutes les
+  5 minutes, une requête par station ou arrêt. Une requête à la fois, à 1 s
+  d'écart au moins.
+- La CTA accorde à chaque clé **100 000 requêtes par jour** par défaut
+  (documentation lue le 2026-11-27). L'intégration tient son propre **budget
+  quotidien par clé** (10 000 par défaut, réglage « Budget quotidien par
+  clé ») : elle compte les requêtes du jour de Chicago, écrit le compte dans
+  `/data` avant chaque requête (un redémarrage le garde), et allonge
+  l'intervalle de lecture quand les lectures prévues ne tiendraient pas dans
+  90 % du budget (le statut dit « Lectures toutes les N s »). Budget épuisé :
+  cette clé attend le jour suivant de Chicago.
+- Si la CTA dit que la limite quotidienne est atteinte, cette clé se met en
+  pause jusqu'à 00 h 05 à Chicago (une heure au moins). Un 429, une erreur
+  serveur ou une réponse inattendue mettent ce service en pause de 1 ou
+  2 minutes, doublées jusqu'à 6 heures ; les autres services continuent.
+- Si la CTA **refuse une clé**, plus rien n'est envoyé avec elle, même après un
+  redémarrage, tant que vous ne saisissez pas une autre clé ou n'appuyez pas
+  sur **Voir la dernière lecture / réessayer la clé**, qui envoie une requête
+  avec elle (30 s au moins après la précédente). Un succès lève le refus. Un
+  HTTP 401 ou 403 n'est pas pris pour un refus : seule la réponse « clé
+  invalide » de la CTA l'est.
+- Un redémarrage, une reconnexion, une configuration enregistrée sans
+  changement et la Découverte ne lisent pas plus tôt que l'intervalle. Le
+  bouton ne lit que pour réessayer une clé refusée, comme dit plus haut.
+
+## Vos clés
+
+Les clés sont gardées par Gladys dans sa base, jamais réaffichées, et envoyées
+seulement à la CTA (dans l'adresse de chaque requête, comme la CTA l'exige).
+L'intégration ne les écrit ni dans ses journaux, ni dans son statut, ni dans
+`/data` : elle y garde une empreinte salée de 8 bits d'une clé refusée
+(256 valeurs possibles, partagées par d'innombrables clés), assez pour savoir
+« une autre clé » après un redémarrage.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+Le message en haut de la page de configuration dit où en est chaque station et
+chaque arrêt, et combien de requêtes chaque clé a utilisé aujourd'hui.
+Messages courants :
+
+- « La CTA ne connaît pas cet identifiant » : vérifiez-le ; redemandé après
+  30 minutes.
+- « Aucun bus n'a encore confirmé cet identifiant d'arrêt » : l'arrêt n'a pas
+  de prévision maintenant et aucun bus n'y a encore été vu ; rien n'est publié
+  avant.
+- « Diffère de l'horloge de cette machine » : réglez l'horloge de la machine
+  qui fait tourner Gladys.
+
+## Conditions d'utilisation
+
+Les données sont utilisées selon le
+[CTA Developer License Agreement and Terms of Use](https://www.transitchicago.com/developers/terms/)
+et les CTA Trademark Guidelines for Developers : révocable, sans garantie,
+sans logo de la CTA. Données fournies par la CTA. Chaque utilisateur lit les
+API avec ses propres clés depuis son propre Gladys.

@@ -1,0 +1,356 @@
+[
+  {
+    "name": "budget of the day not checked",
+    "file": "src/app.js",
+    "from": "    if (q.count >= this.config.dailyBudget) return { ok: false, kind: 'budget' };\n",
+    "to": ""
+  },
+  {
+    "name": "count saved after the request",
+    "file": "src/app.js",
+    "from": "    q.count += 1;\n    await this.persist();\n    if (gen !== this.gen) return null;",
+    "to": "    await this.persist();\n    if (gen !== this.gen) return null;\n    q.count += 1;"
+  },
+  {
+    "name": "count not saved before the request",
+    "file": "src/app.js",
+    "from": "    q.count += 1;\n    await this.persist();\n",
+    "to": "    q.count += 1;\n"
+  },
+  {
+    "name": "new Chicago day never starts",
+    "file": "src/app.js",
+    "from": "if (!q || q.key !== print || q.day < day) {",
+    "to": "if (!q || q.key !== print) {"
+  },
+  {
+    "name": "another key keeps the old count",
+    "file": "src/app.js",
+    "from": "if (!q || q.key !== print || q.day < day) {",
+    "to": "if (!q || q.day < day) {"
+  },
+  {
+    "name": "quota day after tomorrow believed",
+    "file": "src/app.js",
+    "from": "        q.day <= tomorrow &&\n",
+    "to": ""
+  },
+  {
+    "name": "interval not stretched",
+    "file": "src/app.js",
+    "from": "      seconds = Math.max(seconds, needed);\n",
+    "to": ""
+  },
+  {
+    "name": "whole budget planned",
+    "file": "src/app.js",
+    "from": "(config.dailyBudget * BUDGET_SHARE)",
+    "to": "config.dailyBudget"
+  },
+  {
+    "name": "refused key sent again",
+    "file": "src/app.js",
+    "from": "    if (this.isRefused(service) && this.probing !== service) return 'key_refused';\n",
+    "to": ""
+  },
+  {
+    "name": "refusal not kept",
+    "file": "src/app.js",
+    "from": "      this.persisted.refused[service] = this.keyPrint(this.config.keys[service]);\n",
+    "to": ""
+  },
+  {
+    "name": "key change keeps the refusal",
+    "file": "src/app.js",
+    "from": "        if (this.lastKeys[service] !== config.keys[service]) {\n          this.persisted.refused[service] = null;",
+    "to": "        if (this.lastKeys[service] !== config.keys[service]) {"
+  },
+  {
+    "name": "success keeps the refusal",
+    "file": "src/app.js",
+    "from": "    if (this.persisted.refused[service]) {\n      this.persisted.refused[service] = null;",
+    "to": "    if (this.persisted.refused[service]) {"
+  },
+  {
+    "name": "button retries without spacing",
+    "file": "src/app.js",
+    "from": "        if (last !== null && this.monotonic() - last < REFRESH_MIN * SECOND) continue;\n",
+    "to": ""
+  },
+  {
+    "name": "HTTP errors never pause",
+    "file": "src/app.js",
+    "from": "if (!result.ok && ['rate', 'server', 'http'].includes(result.kind)) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "429 not doubled",
+    "file": "src/app.js",
+    "from": "duration = PAUSE_429_FIRST * 2 ** (pause.level429 - 1);",
+    "to": "duration = PAUSE_429_FIRST;"
+  },
+  {
+    "name": "pause not bounded to 6 h",
+    "file": "src/app.js",
+    "from": "duration = Math.min(PAUSE_MAX, Math.max(PAUSE_MIN, duration));",
+    "to": "duration = Math.max(PAUSE_MIN, duration);"
+  },
+  {
+    "name": "quota pause of one hour only",
+    "file": "src/app.js",
+    "from": "nextChicagoMidnight(wall) + QUOTA_RESET_MARGIN - wall,",
+    "to": "0,"
+  },
+  {
+    "name": "daily limit answer ignored",
+    "file": "src/app.js",
+    "from": "      this.startPause(service, { kind: 'quota' });\n",
+    "to": ""
+  },
+  {
+    "name": "pause not checked before a keyed request",
+    "file": "src/app.js",
+    "from": "    if (this.pausedFor(service) > 0) return 'paused';\n",
+    "to": ""
+  },
+  {
+    "name": "persisted pause forgotten at restart",
+    "file": "src/app.js",
+    "from": "      if (this.pauseUntilMono[service] === null || this.pauseUntilMono[service] < until) {",
+    "to": "      if (false) {"
+  },
+  {
+    "name": "unknown id asked every round",
+    "file": "src/app.js",
+    "from": "return !!entry && mono - entry.mono < MISSING_RETRY - ALERTS_SLACK;",
+    "to": "return false;"
+  },
+  {
+    "name": "unconfirmed bus stop published empty",
+    "file": "src/app.js",
+    "from": "if (result.departures.length === 0 && !this.isConfirmed(watch)) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "Date far from the local clock believed",
+    "file": "src/app.js",
+    "from": "    if (Math.abs(skew) > CLOCK_SKEW) {",
+    "to": "    if (false) {"
+  },
+  {
+    "name": "answer without Date used",
+    "file": "src/app.js",
+    "from": "    if (at === null || at === undefined) return { kind: 'no_date' };\n",
+    "to": ""
+  },
+  {
+    "name": "train time stamp not checked",
+    "file": "src/app.js",
+    "from": "      if (Math.abs(read.at - fresh.at) > STAMP_SKEW) {\n        this.recordFailure(watch, 'dep', { kind: 'stale' });",
+    "to": "      if (false) {\n        this.recordFailure(watch, 'dep', { kind: 'stale' });"
+  },
+  {
+    "name": "restart reads at once",
+    "file": "src/app.js",
+    "from": "        wait = Math.max(0, last + this.interval - wall);",
+    "to": "        wait = 0;"
+  },
+  {
+    "name": "unknown last attempt reads at once",
+    "file": "src/app.js",
+    "from": "        wait = Math.max(0, this.startMono + REFRESH_MIN * SECOND - mono);",
+    "to": "        wait = 0;"
+  },
+  {
+    "name": "unchanged config reads at once",
+    "file": "src/app.js",
+    "from": "        wait = Math.max(0, this.lastAttemptMono + this.interval - mono);",
+    "to": "        wait = 0;"
+  },
+  {
+    "name": "unreadable /data overwritten",
+    "file": "src/app.js",
+    "from": "    if (!this.loaded || this.storeStatus === 'unreadable') return false;",
+    "to": "    if (!this.loaded) return false;"
+  },
+  {
+    "name": "no gap between requests",
+    "file": "src/app.js",
+    "from": "      const wait = this.lastRequestMono + REQUEST_GAP - this.monotonic();",
+    "to": "      const wait = 0;"
+  },
+  {
+    "name": "alerts failure not spaced",
+    "file": "src/app.js",
+    "from": "        if (answer.kind !== 'paused') this.alertsFailed(key, start);\n",
+    "to": ""
+  },
+  {
+    "name": "first alerts read announced",
+    "file": "src/app.js",
+    "from": "    const baseline = !previous || previous.fingerprint !== fingerprint;",
+    "to": "    const baseline = false;"
+  },
+  {
+    "name": "old alert announced",
+    "file": "src/app.js",
+    "from": "        if (at - alert.start <= FRESH_ALERT) fresh.push(alert);",
+    "to": "        fresh.push(alert);"
+  },
+  {
+    "name": "Gladys waited without bound",
+    "file": "src/app.js",
+    "from": "        () => reject(new Error('Gladys did not answer')),\n        GLADYS_BOUND,",
+    "to": "        () => reject(new Error('Gladys did not answer')),\n        1e12,"
+  },
+  {
+    "name": "getConfig retry not spaced",
+    "file": "src/app.js",
+    "from": "        delay = Math.min(delay * 2, CONFIG_RETRY_MAX);\n",
+    "to": ""
+  },
+  {
+    "name": "no next round after a failed one",
+    "file": "src/app.js",
+    "from": "            this.scheduleCycle(this.interval, gen);\n          }\n        });",
+    "to": "          }\n        });"
+  },
+  {
+    "name": "unpublished device published",
+    "file": "src/app.js",
+    "from": "    if (!this.isCreated(ids) || gen !== this.gen) return;",
+    "to": "    if (gen !== this.gen) return;"
+  },
+  {
+    "name": "train arrival generated long ago used",
+    "file": "src/watch.js",
+    "from": "    if (read.at - eta.generated > PREDICTION_STALE) return { ok: false, kind: 'stale' };\n",
+    "to": ""
+  },
+  {
+    "name": "bus prediction generated long ago used",
+    "file": "src/watch.js",
+    "from": "    if (at - prd.generated > PREDICTION_STALE) return { ok: false, kind: 'stale' };\n",
+    "to": ""
+  },
+  {
+    "name": "canceled bus counted",
+    "file": "src/watch.js",
+    "from": "    if (prd.skip) continue;\n",
+    "to": ""
+  },
+  {
+    "name": "train line filter ignored",
+    "file": "src/watch.js",
+    "from": "    if (routes.size > 0 && !routes.has(eta.route)) continue;\n",
+    "to": ""
+  },
+  {
+    "name": "bus unknown stop published",
+    "file": "src/watch.js",
+    "from": "  if (status === 'missing') return { ok: false, kind: 'stop_missing' };\n",
+    "to": ""
+  },
+  {
+    "name": "unreadable arrival skipped",
+    "file": "src/cta.js",
+    "from": "    if (!eta) return { ok: false, kind: 'unreadable' };",
+    "to": "    if (!eta) continue;"
+  },
+  {
+    "name": "unreadable bus prediction skipped",
+    "file": "src/cta.js",
+    "from": "    if (!prd) return { ok: false, kind: 'unreadable' };",
+    "to": "    if (!prd) continue;"
+  },
+  {
+    "name": "train refused key not read",
+    "file": "src/cta.js",
+    "from": "  if (code === 101) return { ok: false, kind: 'key_refused', code };\n",
+    "to": ""
+  },
+  {
+    "name": "bus refused key not read",
+    "file": "src/cta.js",
+    "from": "    if (BUS_REFUSED.some((p) => p.test(msg))) return { ok: false, kind: 'key_refused' };\n",
+    "to": ""
+  },
+  {
+    "name": "bus daily limit not read",
+    "file": "src/cta.js",
+    "from": "    if (BUS_QUOTA.test(msg)) return { ok: false, kind: 'quota' };\n",
+    "to": ""
+  },
+  {
+    "name": "streamed size not checked",
+    "file": "src/cta.js",
+    "from": "    if (size > max) {",
+    "to": "    if (false) {"
+  },
+  {
+    "name": "announced size not checked",
+    "file": "src/cta.js",
+    "from": "    if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {",
+    "to": "    if (false) {"
+  },
+  {
+    "name": "redirect followed",
+    "file": "src/cta.js",
+    "from": "      redirect: 'error',",
+    "to": "      redirect: 'follow',"
+  },
+  {
+    "name": "no request timeout",
+    "file": "src/cta.js",
+    "from": "    timedOut = true;\n    controller.abort();",
+    "to": "    timedOut = true;"
+  },
+  {
+    "name": "time with offset believed",
+    "file": "src/time.js",
+    "from": "  for (const pattern of PATTERNS) {",
+    "to": "  for (const pattern of [...PATTERNS, /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::(\\d{2}))?Z$/]) {"
+  },
+  {
+    "name": "skipped hour read in CDT",
+    "file": "src/time.js",
+    "from": "  for (const candidate of [guess + 5 * 3600 * 1000, guess + 6 * 3600 * 1000]) {",
+    "to": "  for (const candidate of [guess + 6 * 3600 * 1000, guess + 5 * 3600 * 1000]) {"
+  },
+  {
+    "name": "invalid key accepted",
+    "file": "src/config.js",
+    "from": "  return KEY_PATTERN.test(key) ? key : undefined;",
+    "to": "  return key;"
+  },
+  {
+    "name": "alert link elsewhere kept",
+    "file": "src/cta.js",
+    "from": "  return m ? `https://www.transitchicago.com${m[2] ?? '/'}` : '';",
+    "to": "  return m ? `https://www.transitchicago.com${m[2] ?? '/'}` : text;"
+  },
+  {
+    "name": "unreadable /data never read again",
+    "file": "src/app.js",
+    "from": "    this.load();\n    this.scheduleReload(gen);",
+    "to": "    this.load();"
+  },
+  {
+    "name": "merge forgets the count of the file",
+    "file": "src/app.js",
+    "from": "count(file.quota[service], print)",
+    "to": "0"
+  },
+  {
+    "name": "merge keeps the refusal of memory only",
+    "file": "src/app.js",
+    "from": "        file.refused[service] = print;\n",
+    "to": "        file.refused[service] = null;\n"
+  },
+  {
+    "name": "merge lifts a refusal without a success",
+    "file": "src/app.js",
+    "from": "      } else if (key && this.accepted[service] === key) {",
+    "to": "      } else if (key) {"
+  }
+]
