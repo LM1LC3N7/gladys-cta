@@ -166,7 +166,7 @@ test('getJson: an honest User-Agent, no redirect followed, statuses sorted', asy
   assert.equal(init.headers['User-Agent'], USER_AGENT);
   assert.match(
     USER_AGENT,
-    /^gladys-cta\/0\.1\.0 \(\+https:\/\/github\.com\/LM1LC3N7\/gladys-cta\)$/,
+    /^gladys-chicago-transit\/0\.1\.0 \(\+https:\/\/github\.com\/LM1LC3N7\/gladys-chicago-transit\)$/,
   );
   assert.equal(init.redirect, 'error');
   const status = async (code, headers) =>

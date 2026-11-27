@@ -19,7 +19,7 @@ export const BUS_URL = 'https://www.ctabustracker.com/bustime/api/v3/getpredicti
 export const ALERTS_URL = 'https://www.transitchicago.com/api/1.0/alerts.aspx';
 
 /** An honest User-Agent naming the integration, never a browser's. */
-export const USER_AGENT = `gladys-cta/${VERSION} (+https://github.com/LM1LC3N7/gladys-cta)`;
+export const USER_AGENT = `gladys-chicago-transit/${VERSION} (+https://github.com/LM1LC3N7/gladys-chicago-transit)`;
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;

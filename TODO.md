@@ -2,13 +2,9 @@
 
 ## Before announcing
 
-- [ ] Rename the repository and the image before the first release? Louis to decide. The current branding page
-      (https://www.transitchicago.com/developers/branding/, read for review r1) asks: no CTA name as the first or main
-      word of a project name, punctuation before a CTA name ("MyTransitApp - CTA version" accepted), no "official",
-      no CTA logo, no CTA service name; it says nothing of repositories. `gladys-cta` puts "cta" after `gladys-` and a
-      hyphen, but it is the only distinguishing word (residual risk with a strict reading). The manifest name,
-      "Chicago Transit Departures", holds no CTA mark. If kept: "Unofficial … data provided by CTA" in the GitHub
-      description of the repository.
+- [x] Repository renamed `gladys-cta` → `gladys-chicago-transit` before the first release (decision of Louis,
+      2026-11-27), so no CTA mark is the main word of any name (branding page
+      https://www.transitchicago.com/developers/branding/).
 - [ ] Try it with real keys (Train Tracker and Bus Tracker): the answers with a key were only simulated from the
       official documentation (JSON examples of the Train Tracker page and of the Bus Tracker guide v3.0).
 - [ ] Install it on a real Gladys 5.3+ and add a station and a bus stop: device creation, texts, the scene trigger.
@@ -30,7 +26,7 @@
 ## Decisions
 
 - **Version 0.1.0** set by hand in package.json, package-lock.json, the manifest and its `docker_image`
-  (`ghcr.io/lm1lc3n7/gladys-cta:0.1.0`).
+  (`ghcr.io/lm1lc3n7/gladys-chicago-transit:0.1.0`).
 - **SDK `^0.16.1`**, the latest published (npm registry, 2026-11-27): no change needed for a read-only device
   integration. `gladys_version >=5.3.0` for `countries: ["US"]`.
 - **Name**: "Chicago Transit Departures": no CTA mark in it (the branding page: no CTA name as the first or main word,

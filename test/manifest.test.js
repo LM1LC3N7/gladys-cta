@@ -56,12 +56,12 @@ test('the store basics; one version in the four places, never pinned', () => {
   assert.equal(manifest.type, 'device');
   assert.match(manifest.version, SEMVER);
   assert.equal(manifest.version, '0.1.0');
-  assert.equal(manifest.docker_image, `ghcr.io/lm1lc3n7/gladys-cta:${manifest.version}`);
+  assert.equal(manifest.docker_image, `ghcr.io/lm1lc3n7/gladys-chicago-transit:${manifest.version}`);
   assert.equal(manifest.version, pkg.version);
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[''].version, pkg.version);
   assert.equal(lock.name, pkg.name);
-  assert.equal(pkg.name, 'gladys-cta');
+  assert.equal(pkg.name, 'gladys-chicago-transit');
   assert.equal(pkg.license, 'Apache-2.0');
   assert.equal(pkg.scripts.test, 'node --test --test-timeout=60000');
   assert.match(pkg.dependencies['@gladysassistant/integration-sdk'], /^\^\d+\.\d+\.\d+$/);
@@ -73,7 +73,7 @@ test('the store basics; one version in the four places, never pinned', () => {
   assert.equal(manifest.location, undefined, 'the house location is never asked');
   assert.match(
     manifest.cover_image,
-    /^https:\/\/raw\.githubusercontent\.com\/LM1LC3N7\/gladys-cta\//,
+    /^https:\/\/raw\.githubusercontent\.com\/LM1LC3N7\/gladys-chicago-transit\//,
   );
   for (const lang of ['en', 'fr']) {
     const length = manifest.description[lang].length;

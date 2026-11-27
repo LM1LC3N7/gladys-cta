@@ -75,7 +75,7 @@ test('real clock x20: one round per interval, requests 1 s apart, bounded timers
     const gap = sent[i] - sent[i - 1];
     assert.ok(gap >= 0.9 * REQUEST_GAP, `gap ${Math.round(gap)} ms`);
   }
-  assert.match(requests[0].headers['user-agent'], /^gladys-cta\//);
+  assert.match(requests[0].headers['user-agent'], /^gladys-chicago-transit\//);
   assert.ok(requests.some((r) => r.url.startsWith('/train?key=') && r.url.includes('mapid=40380')));
   assert.ok(clock.timersSet < 80, `${clock.timersSet} timers`);
   assert.equal(gladys.fake.connectionStatus.connected, true);
